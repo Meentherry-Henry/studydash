@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyDash — Exam Revision</title>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyAePP9tDgXd0nY5vuaniJAK66KWuHS5sU0",
+    authDomain: "studydash-9bfe7.firebaseapp.com",
+    projectId: "studydash-9bfe7",
+    storageBucket: "studydash-9bfe7.firebasestorage.app",
+    messagingSenderId: "1055855503827",
+    appId: "1:1055855503827:web:571c9c7cdad1cd73172726"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  function setSyncStatus(msg, color) { const el = document.getElementById('syncStatus'); if (el) { el.textContent = msg; el.style.color = color || '#94a3b8'; } }
+  async function fbSave(key, data) {
+    try { setSyncStatus('⟳ Saving…', '#f59e0b'); await setDoc(doc(db, 'studydash', key), { data: JSON.stringify(data), updated: Date.now() }); setSyncStatus('✓ Synced', '#10b981'); setTimeout(() => setSyncStatus('● Live', '#10b981'), 1500); }
+    catch(e) { setSyncStatus('⚠ Offline', '#ef4444'); }
+  }
+  async function fbLoad(key, def) {
+    try { const snap = await getDoc(doc(db, 'studydash', key)); if (snap.exists()) return JSON.parse(snap.data().data); return def; }
+    catch(e) { return def; }
+  }
+  function listenTo(key, callback) { onSnapshot(doc(db, 'studydash', key), (snap) => { if (snap.exists()) { try { callback(JSON.parse(snap.data().data)); } catch(e) {} } }); }
+  window.fbSave = fbSave; window.fbLoad = fbLoad; window.fbListenTo = listenTo; window.fbReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #f1f5f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --accent: #6366f1;
+  --accent-light: #eef2ff;
+  --accent2: #8b5cf6;
+  --text: #1e293b;
+  --text2: #475569;
+  --muted: #94a3b8;
+  --urgent: #ef4444;
+  --urgent-light: #fef2f2;
+  --soon: #f59e0b;
+  --soon-light: #fffbeb;
+  --fine: #10b981;
+  --fine-light: #ecfdf5;
+  --blue: #3b82f6;
+  --blue-light: #eff6ff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; font-size: 14px; }
+
+header { padding: 0.875rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 50; box-shadow: var(--shadow); }
+.logo { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.04em; color: var(--accent); display: flex; align-items: center; gap: 0.4rem; }
+.logo span { color: var(--text); }
+.logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+.header-right { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--muted); text-align: right; line-height: 1.8; }
+#syncStatus { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; }
+
+.nav-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; scrollbar-width: none; padding: 0 1rem; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab { padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 500; color: var(--muted); cursor: pointer; border: none; background: none; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; display: flex; align-items: center; gap: 0.35rem; }
+.nav-tab:hover { color: var(--text2); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+.page { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; animation: fadeUp 0.25s ease; }
+.page.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+
+.sec { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.sec::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
+.card-title { font-size: 0.875rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
+.card-icon { font-size: 1.25rem; margin-bottom: 0.5rem; }
+
+.hero { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; box-shadow: 0 8px 32px rgba(99,102,241,0.25); }
+.hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 300px; height: 300px; background: rgba(255,255,255,0.07); border-radius: 50%; pointer-events: none; }
+.hero::after { content: ''; position: absolute; bottom: -80px; left: -40px; width: 250px; height: 250px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: none; }
+.hero-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 0.4rem; }
+.hero-subject { font-weight: 800; font-size: clamp(1.2rem, 2.5vw, 1.75rem); line-height: 1.2; margin-bottom: 0.5rem; color: white; letter-spacing: -0.02em; }
+.hero-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: rgba(255,255,255,0.65); margin-bottom: 1.25rem; }
+.countdown-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; max-width: 340px; }
+.count-block { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.6rem; padding: 0.6rem; text-align: center; }
+.count-num { font-weight: 800; font-size: 1.6rem; color: white; line-height: 1; display: block; font-variant-numeric: tabular-nums; }
+.count-label { font-size: 0.5rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+
+.exam-grid { display: grid; gap: 0.5rem; }
+.exam-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: var(--radius-sm); padding: 0.875rem 1rem; display: grid; grid-template-columns: 72px 1fr auto; gap: 0.75rem; align-items: center; transition: all 0.15s; box-shadow: var(--shadow); animation: slideIn 0.3s ease forwards; opacity: 0; cursor: pointer; }
+.exam-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.exam-card.urgent { border-left-color: var(--urgent); }
+.exam-card.soon { border-left-color: var(--soon); }
+.exam-card.fine { border-left-color: var(--fine); }
+.exam-card.past { opacity: 0.45; }
+.eday { font-family: 'JetBrains Mono', monospace; }
+.eday .dl { color: var(--muted); font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+.eday .dn { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.esubj { font-weight: 600; font-size: 0.85rem; line-height: 1.3; color: var(--text); }
+.esub2 { font-size: 0.68rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 0.15rem; }
+.eright { text-align: right; }
+.etime { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text2); }
+.edur { font-size: 0.62rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 600; margin-top: 0.2rem; }
+.badge.urgent { background: var(--urgent-light); color: var(--urgent); }
+.badge.soon { background: var(--soon-light); color: var(--soon); }
+.badge.fine { background: var(--fine-light); color: var(--fine); }
+.badge.past { background: var(--bg2); color: var(--muted); }
+
+.filter-row { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.fbtn { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); padding: 0.3rem 0.85rem; font-size: 0.68rem; font-weight: 500; cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow); }
+.fbtn:hover { color: var(--text2); border-color: var(--border2); }
+.fbtn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.btn { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); padding: 0.45rem 1rem; font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn:hover { background: #4f46e5; }
+.btn-ghost { background: var(--surface); color: var(--text2); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.btn-ghost:hover { background: var(--bg2); }
+.btn-danger { background: var(--urgent-light); color: var(--urgent); border: 1px solid #fecaca; box-shadow: none; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-green { background: var(--fine-light); color: var(--fine); border: 1px solid #a7f3d0; box-shadow: none; }
+.btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+input[type=text], input[type=date], input[type=number], select, textarea { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+select option { background: var(--surface); color: var(--text); }
+label { font-size: 0.72rem; color: var(--text2); display: block; margin-bottom: 0.3rem; font-weight: 600; }
+.form-row { margin-bottom: 0.75rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+
+.pp-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+.pp-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; box-shadow: var(--shadow); }
+.pp-stat-num { font-size: 1.6rem; font-weight: 800; line-height: 1; margin-bottom: 0.2rem; }
+.pp-stat-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pp-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.pp-table th { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--border); text-align: left; }
+.pp-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.pp-table tr:hover td { background: var(--bg2); }
+.score-pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 600; }
+.score-a { background: var(--fine-light); color: var(--fine); }
+.score-b { background: var(--blue-light); color: var(--blue); }
+.score-c { background: var(--soon-light); color: var(--soon); }
+.score-d { background: var(--urgent-light); color: var(--urgent); }
+
+.subj-pill-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.subj-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); padding: 0.28rem 0.8rem; font-size: 0.67rem; font-weight: 600; cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow); }
+.subj-pill:hover { border-color: var(--border2); color: var(--text2); }
+.subj-pill.active { color: white; border-color: transparent; }
+
+.chart-container { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+.chart-title { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
+.chart-sub { font-size: 0.68rem; color: var(--muted); margin-bottom: 1rem; }
+.no-data-chart { text-align: center; padding: 2.5rem; color: var(--muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+
+.tracker-grid { display: grid; gap: 0.75rem; }
+.tracker-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem 1.1rem; box-shadow: var(--shadow); }
+.tracker-subj { font-size: 0.87rem; font-weight: 700; color: var(--text); border-left: 3px solid var(--accent); padding-left: 0.6rem; margin-bottom: 0.75rem; }
+.tracker-controls { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.confidence-stars { display: flex; gap: 0.2rem; }
+.star-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #d1d5db; transition: color 0.1s; padding: 0; }
+.star-btn.lit { color: #f59e0b; }
+.star-btn:hover { color: #f59e0b; }
+.done-slider { -webkit-appearance: none; width: 120px; height: 5px; border-radius: 3px; background: var(--border2); outline: none; padding: 0; border: none; box-shadow: none; cursor: pointer; }
+.done-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 1px 3px rgba(99,102,241,0.3); }
+.tracker-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 600; color: var(--accent); width: 32px; }
+.tracker-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-top: 0.5rem; }
+.tracker-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.3s ease; }
+
+.notes-layout { display: grid; grid-template-columns: 180px 1fr; gap: 1rem; min-height: 400px; }
+.notes-sidebar { display: flex; flex-direction: column; gap: 0.35rem; }
+.note-tab { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; font-size: 0.76rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; transition: all 0.12s; font-weight: 500; box-shadow: var(--shadow); }
+.note-tab.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.nt-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nt-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.6rem; padding: 0; }
+.nt-del:hover { color: var(--urgent); }
+.notes-main { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.note-editor-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+.note-editor-header input { background: none; border: none; font-weight: 700; font-size: 1rem; color: var(--text); width: 100%; padding: 0; outline: none; box-shadow: none; }
+.note-editor-header input::placeholder { color: var(--muted); font-weight: 400; }
+.note-textarea { flex: 1; padding: 1rem; background: none; border: none; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 1.7; resize: none; min-height: 320px; outline: none; box-shadow: none; }
+.notes-saved { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--muted); padding: 0.4rem 1rem; border-top: 1px solid var(--border); }
+
+.fc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; box-shadow: var(--shadow-md); }
+.fc-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.fc-front { font-weight: 700; font-size: 1rem; color: var(--text); }
+.fc-back { font-size: 0.84rem; line-height: 1.6; display: none; color: var(--text2); }
+.fc-card.flipped .fc-front { display: none; }
+.fc-card.flipped .fc-back { display: block; }
+.fc-card.flipped { border-color: var(--accent); background: var(--accent-light); }
+.fc-hint { position: absolute; bottom: 0.6rem; left: 50%; transform: translateX(-50%); font-size: 0.56rem; color: var(--muted); white-space: nowrap; }
+.fc-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 0.75rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.fc-list { display: grid; gap: 0.4rem; max-height: 220px; overflow-y: auto; }
+.fc-list-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.45rem 0.7rem; font-size: 0.74rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1rem; }
+.tool-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.9rem; }
+.check-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+.check-item:last-child { border-bottom: none; }
+.check-item label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; flex: 1; font-size: 0.82rem; }
+.check-item input[type=checkbox] { display: none; }
+.cbox { width: 17px; height: 17px; border: 1.5px solid var(--border2); border-radius: 0.3rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-size: 0.6rem; }
+.check-item input:checked + .cbox { background: var(--accent); border-color: var(--accent); color: white; }
+.prog-wrap { height: 5px; background: var(--border); border-radius: 3px; margin-top: 0.75rem; }
+.prog-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.4s ease; }
+.tip-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; font-size: 0.82rem; line-height: 1.7; min-height: 80px; color: var(--text2); }
+.pomo-ring { position: relative; width: 110px; height: 110px; margin: 0 auto 0.75rem; }
+.pomo-ring svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 7; }
+.ring-fg { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.pomo-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pomo-time-txt { font-weight: 800; font-size: 1.3rem; color: var(--accent); line-height: 1; }
+.pomo-lbl { font-family: 'JetBrains Mono', monospace; font-size: 0.48rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.days-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 0.5rem; margin-bottom: 1.5rem; }
+.day-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; min-height: 180px; box-shadow: var(--shadow); }
+.day-col-head { background: var(--bg2); padding: 0.5rem; text-align: center; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border-bottom: 1px solid var(--border); }
+.day-col.today .day-col-head { background: var(--accent-light); color: var(--accent); border-bottom-color: var(--accent); }
+.day-tasks { padding: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.task-chip { background: var(--bg2); border-radius: 0.35rem; padding: 0.35rem 0.45rem; font-size: 0.65rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 0.3rem; border-left: 2px solid var(--accent); }
+.tc-text { flex: 1; line-height: 1.3; font-weight: 500; color: var(--text); }
+.tc-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.65rem; padding: 0; flex-shrink: 0; }
+.tc-del:hover { color: var(--urgent); }
+.tc-time { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; color: var(--muted); }
+.add-task-row { padding: 0.4rem; border-top: 1px solid var(--border); }
+.add-task-btn { width: 100%; background: none; border: 1px dashed var(--border); border-radius: 0.35rem; color: var(--muted); font-size: 0.62rem; font-weight: 500; padding: 0.35rem; cursor: pointer; transition: all 0.15s; }
+.add-task-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; width: 100%; box-shadow: var(--shadow-lg); }
+.modal-sm { max-width: 420px; }
+.modal-lg { max-width: 600px; }
+.modal h3 { font-weight: 800; font-size: 1.1rem; margin-bottom: 1rem; color: var(--text); }
+.modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; }
+.modal-close:hover { color: var(--urgent); }
+
+.exam-detail-cd { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; margin: 1rem 0; }
+.exam-detail-cd-block { background: var(--accent-light); border: 1px solid rgba(99,102,241,0.15); border-radius: var(--radius-sm); padding: 0.6rem; text-align: center; }
+.exam-detail-cd-num { font-size: 1.5rem; font-weight: 800; color: var(--accent); line-height: 1; display: block; font-variant-numeric: tabular-nums; }
+.exam-detail-cd-label { font-size: 0.52rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+.exam-info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+.exam-info-row:last-child { border-bottom: none; }
+.exam-info-label { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.exam-info-value { font-weight: 500; color: var(--text); }
+
+.file-drop-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1rem; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--bg2); position: relative; }
+.file-drop-zone:hover, .file-drop-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+.file-drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; padding: 0; border: none; background: none; box-shadow: none; }
+.file-drop-text { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--muted); }
+.file-drop-text strong { color: var(--accent); }
+.file-attached { display: flex; align-items: center; gap: 0.5rem; background: var(--fine-light); border: 1px solid #a7f3d0; border-radius: var(--radius-sm); padding: 0.45rem 0.7rem; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--fine); margin-top: 0.5rem; }
+.file-attached .fa-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.65rem; margin-left: auto; padding: 0; }
+.file-view-btn { background: none; border: none; color: var(--blue); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; cursor: pointer; text-decoration: underline; padding: 0; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+@media(max-width: 700px) {
+  .days-grid { grid-template-columns: repeat(2,1fr); }
+  .notes-layout { grid-template-columns: 1fr; }
+  .exam-card { grid-template-columns: 65px 1fr; }
+  .eright { display: none; }
+  .form-grid { grid-template-columns: 1fr; }
+  .page { padding: 1rem; }
+  header { padding: 0.875rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>STUDY<span>DASH</span></div>
+  <div class="header-right">
+    <span id="headerDate"></span> &nbsp;·&nbsp; <span id="liveTime"></span><br>
+    <span id="syncStatus">● Connecting…</span>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="showPage('dashboard',this)">🏠 Dashboard</button>
+  <button class="nav-tab" onclick="showPage('exams',this)">📅 Exams</button>
+  <button class="nav-tab" onclick="showPage('routine',this)">📋 Routine</button>
+  <button class="nav-tab" onclick="showPage('pastpapers',this)">📝 Past Papers</button>
+  <button class="nav-tab" onclick="showPage('tracker',this)">📊 Subject Tracker</button>
+  <button class="nav-tab" onclick="showPage('flashcards',this)">🃏 Flashcards</button>
+  <button class="nav-tab" onclick="showPage('notes',this)">📓 Notes</button>
+  <button class="nav-tab" onclick="showPage('tools',this)">🛠️ Tools</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="hero">
+    <div class="hero-label">⚡ Next exam up</div>
+    <div class="hero-subject" id="heroSubject">Loading…</div>
+    <div class="hero-meta" id="heroMeta"></div>
+    <div class="countdown-grid">
+      <div class="count-block"><span class="count-num" id="cdDays">--</span><span class="count-label">Days</span></div>
+      <div class="count-block"><span class="count-num" id="cdHours">--</span><span class="count-label">Hours</span></div>
+      <div class="count-block"><span class="count-num" id="cdMins">--</span><span class="count-label">Mins</span></div>
+      <div class="count-block"><span class="count-num" id="cdSecs">--</span><span class="count-label">Secs</span></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card"><div class="card-icon">📊</div><div class="card-title">Quick Stats</div><div id="dashStats" style="font-size:0.78rem;line-height:2.1;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:0.4rem;"></div></div>
+    <div class="card"><div class="card-icon">☀️</div><div class="card-title">Today's Tasks</div><div id="dashToday" style="font-size:0.78rem;margin-top:0.4rem;"></div><button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.67rem;" onclick="showPage('routine',document.querySelectorAll('.nav-tab')[2])">Go to Routine →</button></div>
+    <div class="card"><div class="card-icon">📈</div><div class="card-title">Past Paper Progress</div><div id="dashPP" style="font-size:0.78rem;line-height:2.1;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:0.4rem;"></div><button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.67rem;" onclick="showPage('pastpapers',document.querySelectorAll('.nav-tab')[3])">View Logs →</button></div>
+    <div class="card"><div class="card-icon">💡</div><div class="card-title">Study Tip</div><div id="dashTip" class="tip-card" style="margin-top:0.5rem;font-size:0.78rem;padding:0.8rem;"></div><button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.67rem;" onclick="cycleTip()">Next tip →</button></div>
+  </div>
+  <div class="sec">⚡ Upcoming Exams</div>
+  <div class="exam-grid" id="dashExamGrid"></div>
+</div>
+
+<!-- EXAMS -->
+<div class="page" id="page-exams">
+  <div class="sec">📅 Exam Schedule</div>
+  <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;">Click any exam card to see a detailed countdown timer.</p>
+  <div class="filter-row">
+    <button class="fbtn active" onclick="filterExams('all',this)">All</button>
+    <button class="fbtn" onclick="filterExams('upcoming',this)">Upcoming</button>
+    <button class="fbtn" onclick="filterExams('past',this)">Past</button>
+  </div>
+  <div class="exam-grid" id="examGrid"></div>
+</div>
+
+<!-- ROUTINE -->
+<div class="page" id="page-routine">
+  <div class="sec">📋 Weekly Routine Builder</div>
+  <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1.25rem;">Click <strong style="color:var(--text)">+ Add</strong> on any day, or use the form below.</p>
+  <div class="days-grid" id="routineGrid"></div>
+  <div class="sec">Add a Block</div>
+  <div class="card" style="max-width:520px;">
+    <div class="form-grid">
+      <div class="form-row"><label>Day</label><select id="rtDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>
+      <div class="form-row"><label>Time</label><input type="text" id="rtTime" placeholder="e.g. 9:00am"></div>
+    </div>
+    <div class="form-row"><label>Subject / Activity</label><input type="text" id="rtSubject" placeholder="e.g. Biology — past papers"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Duration</label><input type="text" id="rtDur" placeholder="e.g. 1hr 30min"></div>
+      <div class="form-row"><label>Colour</label>
+        <select id="rtColor">
+          <option value="#6366f1">Indigo</option><option value="#10b981">Green</option><option value="#3b82f6">Blue</option>
+          <option value="#f59e0b">Amber</option><option value="#ef4444">Red</option><option value="#8b5cf6">Purple</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="addRoutineBlock()">+ Add Block</button>
+  </div>
+</div>
+
+<!-- PAST PAPERS -->
+<div class="page" id="page-pastpapers">
+  <div class="sec">📝 Past Paper Log</div>
+  <div class="pp-stats" id="ppStats"></div>
+  <div class="chart-container">
+    <div class="chart-title">📈 Grades Over Time</div>
+    <div class="chart-sub">Select a subject to see how your scores have improved.</div>
+    <div class="subj-pill-row" id="ppChartTabs"></div>
+    <div id="ppChartArea"><div class="no-data-chart">Log past papers below to see your grade trend appear here.</div></div>
+  </div>
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-title" style="margin-bottom:0.9rem;">Log a Past Paper</div>
+    <div class="form-grid">
+      <div class="form-row"><label>Subject</label>
+        <select id="ppSubject">
+          <option value="Thai">First Language Thai</option>
+          <option value="English">First Language English</option>
+          <option value="Business">Business Studies</option>
+          <option value="Biology">Biology</option>
+          <option value="DT">Design &amp; Technology</option>
+          <option value="Maths">Mathematics</option>
+          <option value="Chemistry">Chemistry</option>
+          <option value="CS">Computer Science</option>
+          <option value="Physics">Physics</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Paper / Year</label><input type="text" id="ppPaper" placeholder="e.g. 2023 Paper 1"></div>
+      <div class="form-row"><label>Score (%)</label><input type="number" id="ppScore" min="0" max="100" placeholder="e.g. 78"></div>
+      <div class="form-row"><label>Date Done</label><input type="date" id="ppDate"></div>
+    </div>
+    <div class="form-row">
+      <label>Confidence — how well did you feel you understood it?</label>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem;">
+        <span style="font-size:0.9rem;">😰</span>
+        <input type="range" class="done-slider" id="ppConfidence" min="1" max="5" value="3" style="width:160px;" oninput="updateConfLabel()">
+        <span style="font-size:0.9rem;">🔥</span>
+        <span id="confLabel" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:600;color:var(--accent);min-width:80px;">😐 Neutral</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Topic Coverage — how much of this subject have you revised? <span id="coverageLabel" style="color:var(--accent);font-weight:700;">50%</span></label>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">0%</span>
+        <input type="range" class="done-slider" id="ppCoverage" min="0" max="100" value="50" style="width:200px;" oninput="document.getElementById('coverageLabel').textContent=this.value+'%'">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">100%</span>
+      </div>
+    </div>
+    <div class="form-row"><label>Notes / Areas to Improve</label><textarea id="ppNotes" placeholder="e.g. Struggled with Q3 — review osmosis…"></textarea></div>
+    <div class="form-row">
+      <label>Attach Paper (PDF / image)</label>
+      <div class="file-drop-zone" id="fileDropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)">
+        <input type="file" id="ppFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+        <div style="font-size:1.2rem;margin-bottom:0.25rem;">📎</div>
+        <div class="file-drop-text">Drop paper here or <strong>click to browse</strong></div>
+      </div>
+      <div id="fileAttachedPreview" style="display:none;"></div>
+    </div>
+    <button class="btn" onclick="addPP()">+ Log Paper</button>
+  </div>
+  <div class="sec">All Logged Papers</div>
+  <div class="subj-pill-row" id="ppFilterTabs"></div>
+  <div style="overflow-x:auto;">
+    <table class="pp-table" id="ppTable">
+      <thead><tr>
+        <th>Date</th><th>Subject</th><th>Paper</th><th>Score</th>
+        <th>Confidence</th><th>Coverage</th><th>File</th><th>Notes</th><th></th>
+      </tr></thead>
+      <tbody id="ppBody"></tbody>
+    </table>
+    <div id="ppEmpty" style="text-align:center;padding:2rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem;">No papers logged yet — add your first one above!</div>
+  </div>
+</div>
+
+<!-- SUBJECT TRACKER -->
+<div class="page" id="page-tracker">
+  <div class="sec">📊 Subject Tracker</div>
+  <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1.25rem;">Rate your confidence and coverage for each subject, then save a snapshot to track your progress over time.</p>
+  <div class="chart-container">
+    <div class="chart-title">📈 Revision Progress Over Time</div>
+    <div class="chart-sub">Snapshots build your progress graph — the more you log, the clearer the picture.</div>
+    <div class="subj-pill-row" id="trackerChartTabs"></div>
+    <div id="trackerChartArea"><div class="no-data-chart">Save a snapshot below to start tracking!</div></div>
+  </div>
+  <div class="sec">Log Today's Revision</div>
+  <div class="tracker-grid" id="trackerGrid"></div>
+  <div style="margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+    <button class="btn" onclick="saveTrackerSnapshot()">💾 Save Snapshot</button>
+    <span style="font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="trackerSaveStatus"></span>
+  </div>
+  <div class="sec" style="margin-top:1.5rem;">History</div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.78rem;" id="historyTable">
+      <thead><tr style="border-bottom:2px solid var(--border);">
+        <th style="padding:0.5rem 0.75rem;text-align:left;font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);">Date</th>
+        <th style="padding:0.5rem 0.75rem;text-align:left;font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);">Subject</th>
+        <th style="padding:0.5rem 0.75rem;text-align:left;font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);">Coverage</th>
+        <th style="padding:0.5rem 0.75rem;text-align:left;font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);">Confidence</th>
+      </tr></thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+    <div id="historyEmpty" style="text-align:center;padding:2rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem;">No history yet.</div>
+  </div>
+</div>
+
+<!-- FLASHCARDS -->
+<div class="page" id="page-flashcards">
+  <div class="sec">🃏 Flashcards</div>
+  <div style="max-width:500px;margin:0 auto;">
+    <div class="fc-card" id="fcCard" onclick="flipCard()">
+      <div class="fc-front" id="fcFront">No cards yet — add some below!</div>
+      <div class="fc-back" id="fcBack"></div>
+      <div class="fc-hint">Click to reveal answer</div>
+    </div>
+    <div class="fc-nav">
+      <button class="btn btn-ghost" onclick="prevCard()">← Prev</button>
+      <span id="fcCounter">0 / 0</span>
+      <button class="btn btn-ghost" onclick="nextCard()">Next →</button>
+    </div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-ghost" style="font-size:0.67rem;" onclick="shuffleCards()">🔀 Shuffle</button>
+      <button class="btn btn-green" style="font-size:0.67rem;" onclick="markKnown()">✓ Got it</button>
+      <button class="btn btn-danger" style="font-size:0.67rem;" onclick="markUnknown()">✗ Review again</button>
+    </div>
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="card-title" style="margin-bottom:0.75rem;">Add Flashcard</div>
+      <div class="form-row"><label>Subject</label>
+        <select id="fcSubject">
+          <option>First Language Thai</option><option>First Language English</option>
+          <option>Business Studies</option><option>Biology</option>
+          <option>Design &amp; Technology</option><option>Mathematics</option>
+          <option>Chemistry</option><option>Computer Science</option><option>Physics</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Question / Term</label><input type="text" id="fcQ" placeholder="e.g. What is osmosis?"></div>
+      <div class="form-row"><label>Answer</label><textarea id="fcA" rows="3" placeholder="e.g. Movement of water from high to low water potential…"></textarea></div>
+      <button class="btn" onclick="addCard()">+ Add Card</button>
+      <div class="sec" style="margin-top:1.25rem;">All Cards</div>
+      <div class="fc-list" id="fcList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div class="page" id="page-notes">
+  <div class="sec" style="margin-bottom:0.75rem;">📓 Notes</div>
+  <div style="margin-bottom:1rem;"><button class="btn" onclick="addNote()">+ New Note</button></div>
+  <div class="notes-layout">
+    <div class="notes-sidebar" id="notesSidebar"></div>
+    <div class="notes-main">
+      <div class="note-editor-header"><input type="text" id="noteTitleInput" placeholder="Note title…" oninput="saveCurrentNote()"></div>
+      <textarea class="note-textarea" id="noteBodyInput" placeholder="Start writing…" oninput="saveCurrentNote()"></textarea>
+      <div class="notes-saved" id="notesSaved"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<div class="page" id="page-tools">
+  <div class="sec">🛠️ Revision Tools</div>
+  <div class="tools-grid">
+    <div class="card">
+      <div class="card-icon">🍅</div><div class="card-title">Pomodoro Timer</div>
+      <div class="tool-desc">Focus sessions with auto breaks.</div>
+      <div class="pomo-ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle class="ring-bg" cx="55" cy="55" r="48"/>
+          <circle class="ring-fg" id="pomoRing" cx="55" cy="55" r="48" stroke-dasharray="301.6" stroke-dashoffset="0"/>
+        </svg>
+        <div class="pomo-center"><div class="pomo-time-txt" id="pomoTime">25:00</div><div class="pomo-lbl" id="pomoLbl">Focus</div></div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-align:center;margin-bottom:0.6rem;" id="pomoSessions">Session 1 of 4</div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button class="btn" id="pomoBtn" onclick="togglePomo()">▶ Start</button>
+        <button class="btn btn-ghost" onclick="resetPomo()">↺</button>
+        <button class="btn btn-ghost" onclick="setPomoMode('break')">☕</button>
+        <button class="btn btn-ghost" onclick="setPomoMode('long')">🌙</button>
+      </div>
+      <div style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <label style="margin:0;font-size:0.62rem;">Work:</label>
+        <input type="number" id="pomoWorkMin" value="25" min="1" max="90" style="width:50px;" oninput="if(!pomoRunning)resetPomo()">
+        <label style="margin:0;font-size:0.62rem;">Break:</label>
+        <input type="number" id="pomoBreakMin" value="5" min="1" max="30" style="width:50px;">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon">✅</div><div class="card-title">Subject Checklist</div>
+      <div class="tool-desc">Tick off subjects as you revise them.</div>
+      <div id="checklistBody"></div>
+      <div class="prog-wrap"><div class="prog-fill" id="checkFill" style="width:0%"></div></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:0.4rem;" id="checkPct"></div>
+      <button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.67rem;" onclick="resetChecks()">Reset All</button>
+    </div>
+    <div class="card">
+      <div class="card-icon">💡</div><div class="card-title">Study Tips</div>
+      <div class="tool-desc">Evidence-based revision strategies.</div>
+      <div class="tip-card" id="tipCard"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="prevTip()">← Prev</button>
+        <button class="btn btn-ghost" onclick="cycleTip()">Next →</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧮</div><div class="card-title">Grade Calculator</div>
+      <div class="tool-desc">See what you need to hit your target.</div>
+      <div class="form-row"><label>Current score (%)</label><input type="number" id="gcCurrent" placeholder="e.g. 65" oninput="calcGrade()"></div>
+      <div class="form-row"><label>Target grade</label>
+        <select id="gcTarget" onchange="calcGrade()">
+          <option value="90">A* (90%+)</option><option value="80">A (80%+)</option>
+          <option value="70">B (70%+)</option><option value="60">C (60%+)</option><option value="50">D (50%+)</option>
+        </select>
+      </div>
+      <div id="gcResult" style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;padding:0.6rem;background:var(--bg2);border-radius:var(--radius-sm);color:var(--muted);border:1px solid var(--border);">Enter your score above.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🗓️</div><div class="card-title">Days Until Each Exam</div>
+      <div class="tool-desc">Quick countdown per subject.</div>
+      <div id="daysUntil" style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.25rem;"></div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎲</div><div class="card-title">Random Exam Question</div>
+      <div class="tool-desc">Practise answering exam-style questions.</div>
+      <div id="randomQ" style="background:var(--bg2);border-radius:var(--radius-sm);padding:0.75rem;font-size:0.8rem;line-height:1.6;min-height:70px;margin-bottom:0.75rem;border:1px solid var(--border);"></div>
+      <div id="randomA" style="display:none;background:var(--fine-light);border:1px solid #a7f3d0;border-radius:var(--radius-sm);padding:0.75rem;font-size:0.76rem;line-height:1.6;margin-bottom:0.75rem;color:var(--fine);"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="newRandomQ()">🎲 New</button>
+        <button class="btn btn-ghost" id="revealBtn" onclick="revealAnswer()" style="display:none;">Show Answer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Task -->
+<div class="modal-bg" id="taskModal">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="closeTaskModal()">✕</button>
+    <h3>Add Task</h3>
+    <input type="hidden" id="taskDay">
+    <div class="form-row"><label>Time</label><input type="text" id="taskTime" placeholder="e.g. 9:00am"></div>
+    <div class="form-row"><label>Subject / Activity</label><input type="text" id="taskSubject" placeholder="e.g. Biology revision"></div>
+    <div class="form-row"><label>Duration</label><input type="text" id="taskDur" placeholder="e.g. 1hr 30min"></div>
+    <div class="form-row"><label>Colour</label>
+      <select id="taskColor">
+        <option value="#6366f1">Indigo</option><option value="#10b981">Green</option><option value="#3b82f6">Blue</option>
+        <option value="#f59e0b">Amber</option><option value="#ef4444">Red</option><option value="#8b5cf6">Purple</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="saveTask()">Add Task</button>
+      <button class="btn btn-ghost" onclick="closeTaskModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Exam Detail -->
+<div class="modal-bg" id="examModal">
+  <div class="modal modal-lg">
+    <button class="modal-close" onclick="document.getElementById('examModal').classList.remove('open')">✕</button>
+    <div id="examModalContent"></div>
+  </div>
+</div>
+
+<!-- MODAL: File View -->
+<div class="modal-bg" id="fileViewModal">
+  <div class="modal modal-lg" style="max-height:90vh;overflow:auto;">
+    <button class="modal-close" onclick="document.getElementById('fileViewModal').classList.remove('open')">✕</button>
+    <h3 id="fileViewTitle" style="margin-bottom:1rem;">Viewing File</h3>
+    <div id="fileViewContent"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const exams = [
+  { date:new Date(2026,3,30), day:'Thu', subject:'First Language Thai — Reading & Directed Writing', code:'0518/01', board:'Cambridge IGCSE', time:'3:15pm', dur:'2hr', subjectKey:'Thai' },
+  { date:new Date(2026,4,6),  day:'Wed', subject:'First Language English — Reading', code:'0500/12', board:'Cambridge IGCSE', time:'11:30am', dur:'2hr', subjectKey:'English' },
+  { date:new Date(2026,4,11), day:'Mon', subject:'Business Studies — Short Answer & Data Response', code:'0450/12', board:'Cambridge IGCSE', time:'11:30am', dur:'1hr 30min', subjectKey:'Business' },
+  { date:new Date(2026,4,12), day:'Tue', subject:'Biology Paper 1BR', code:'4BI1/1BR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr', subjectKey:'Biology' },
+  { date:new Date(2026,4,12), day:'Tue', subject:'Design and Technology — Product Design', code:'0445/12', board:'Cambridge IGCSE', time:'3:15pm', dur:'1hr 15min', subjectKey:'DT' },
+  { date:new Date(2026,4,14), day:'Thu', subject:'Mathematics A Paper 1HR — Higher Tier', code:'4MA1/1HR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr', subjectKey:'Maths' },
+  { date:new Date(2026,4,14), day:'Thu', subject:'First Language Thai — Composition', code:'0518/02', board:'Cambridge IGCSE', time:'3:15pm', dur:'2hr', subjectKey:'Thai' },
+  { date:new Date(2026,4,15), day:'Fri', subject:'First Language English — Directed Writing & Composition', code:'0500/22', board:'Cambridge IGCSE', time:'10:30am', dur:'2hr', subjectKey:'English' },
+  { date:new Date(2026,4,15), day:'Fri', subject:'Computer Science 1 — Programming Practical', code:'9210/1', board:'OxfordAQA IGCSE', time:'2:30pm', dur:'2hr', subjectKey:'CS' },
+  { date:new Date(2026,4,18), day:'Mon', subject:'Business Studies — Case Study', code:'0450/22', board:'Cambridge IGCSE', time:'11:30am', dur:'1hr 30min', subjectKey:'Business' },
+  { date:new Date(2026,4,18), day:'Mon', subject:'Chemistry Paper 1CR', code:'4CH1/1CR', board:'Edexcel IGCSE', time:'2:30pm', dur:'2hr', subjectKey:'Chemistry' },
+  { date:new Date(2026,4,19), day:'Tue', subject:'Computer Science 2 — Concepts & Principles', code:'9210/2', board:'OxfordAQA IGCSE', time:'2:15pm', dur:'2hr', subjectKey:'CS' },
+  { date:new Date(2026,5,2),  day:'Tue', subject:'Physics Paper 1PR', code:'4PH1/1PR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr', subjectKey:'Physics' },
+  { date:new Date(2026,5,3),  day:'Wed', subject:'Mathematics A Paper 2HR — Higher Tier', code:'4MA1/2HR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr', subjectKey:'Maths' },
+  { date:new Date(2026,5,8),  day:'Mon', subject:'Biology Paper 2BR', code:'4BI1/2BR', board:'Edexcel IGCSE', time:'11:45am', dur:'1hr 15min', subjectKey:'Biology' },
+  { date:new Date(2026,5,12), day:'Fri', subject:'Chemistry Paper 2CR', code:'4CH1/2CR', board:'Edexcel IGCSE', time:'11:45am', dur:'1hr 15min', subjectKey:'Chemistry' },
+  { date:new Date(2026,5,15), day:'Mon', subject:'Physics Paper 2PR', code:'4PH1/2PR', board:'Edexcel IGCSE', time:'11:45am', dur:'1hr 15min', subjectKey:'Physics' },
+];
+
+const SUBJECTS = [
+  { key:'Thai',     label:'First Language Thai',    color:'#6366f1' },
+  { key:'English',  label:'First Language English', color:'#3b82f6' },
+  { key:'Business', label:'Business Studies',       color:'#f59e0b' },
+  { key:'Biology',  label:'Biology',                color:'#10b981' },
+  { key:'DT',       label:'Design & Technology',    color:'#ec4899' },
+  { key:'Maths',    label:'Mathematics',            color:'#8b5cf6' },
+  { key:'Chemistry',label:'Chemistry',              color:'#ef4444' },
+  { key:'CS',       label:'Computer Science',       color:'#0ea5e9' },
+  { key:'Physics',  label:'Physics',                color:'#f97316' },
+];
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function daysDiff(d){ const n=new Date(); n.setHours(0,0,0,0); const t=new Date(d); t.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
+function urgClass(d){ if(d<0) return 'past'; if(d<=3) return 'urgent'; if(d<=10) return 'soon'; return 'fine'; }
+function fmtDate(d){ return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function fmtDateFull(d){ return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function sv(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+function ld(k,def){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch{ return def; } }
+async function cloudSave(k,v){ sv(k,v); if(window.fbSave) await window.fbSave(k,v); }
+async function cloudLoad(k,def){ if(window.fbLoad){ const v=await window.fbLoad(k,def); if(JSON.stringify(v)!==JSON.stringify(def)){ sv(k,v); return v; } } return ld(k,def); }
+function subjByKey(k){ return SUBJECTS.find(s=>s.key===k)||{label:k,color:'#6366f1'}; }
+function sBand(s){ s=parseFloat(s); if(s>=80) return 'a'; if(s>=70) return 'b'; if(s>=60) return 'c'; return 'd'; }
+function sLabel(s){ s=parseFloat(s); if(s>=80) return 'A*'; if(s>=70) return 'A'; if(s>=60) return 'B'; return 'C+'; }
+function confEmoji(c){ return ['','😰','😕','😐','🙂','🔥'][parseInt(c)]||'—'; }
+function confText(c){ return ['','Shaky','Unsure','Neutral','Good','Confident'][parseInt(c)]||'—'; }
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const map = {
+    dashboard: refreshDash,
+    exams: ()=>renderExamGrid('examGrid','all'),
+    routine: renderRoutine,
+    pastpapers: renderPP,
+    tracker: renderTracker,
+    flashcards: renderFC,
+    notes: renderNotes,
+    tools: ()=>{ renderChecklist(); renderDaysUntil(); newRandomQ(); updatePomoRing(); }
+  };
+  if(map[id]) map[id]();
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('liveTime').textContent=n.toLocaleTimeString('en-GB');
+  document.getElementById('headerDate').textContent=n.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+}
+
+function updateHero(){
+  const now=new Date();
+  const next=exams.find(e=>e.date>=new Date(now.toDateString()));
+  if(!next){ document.getElementById('heroSubject').textContent='All exams complete! 🎉'; return; }
+  document.getElementById('heroSubject').textContent=next.subject;
+  document.getElementById('heroMeta').textContent=`${next.day} ${fmtDate(next.date)}  ·  ${next.time}  ·  ${next.dur}  ·  ${next.board}`;
+  const t=new Date(next.date);
+  const tp=next.time.match(/(\d+):(\d+)(am|pm)/i);
+  if(tp){ let h=parseInt(tp[1]); if(tp[3].toLowerCase()==='pm'&&h!==12) h+=12; t.setHours(h,parseInt(tp[2]),0,0); }
+  const diff=t-now; if(diff<=0) return;
+  const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  ['cdDays','cdHours','cdMins','cdSecs'].forEach((id,i)=>{ const el=document.getElementById(id); if(el) el.textContent=String([d,h,m,s][i]).padStart(2,'0'); });
+}
+
+function renderExamGrid(cid, filter, limit){
+  const grid=document.getElementById(cid); if(!grid) return; grid.innerHTML=''; let shown=0;
+  exams.forEach(ex=>{
+    const days=daysDiff(ex.date);
+    if(filter==='upcoming'&&days<0) return;
+    if(filter==='past'&&days>=0) return;
+    if(limit&&shown>=limit) return;
+    shown++;
+    const urg=urgClass(days);
+    const dl=days<0?`${Math.abs(days)}d ago`:days===0?'TODAY!':`in ${days}d`;
+    const d=document.createElement('div');
+    d.className=`exam-card ${urg}`; d.style.animationDelay=`${shown*0.04}s`;
+    d.innerHTML=`<div class="eday"><div class="dl">${ex.day}</div><div class="dn">${fmtDate(ex.date)}</div></div><div><div class="esubj">${ex.subject}</div><div class="esub2">${ex.board} · ${ex.code}</div></div><div class="eright"><div class="etime">${ex.time}</div><div class="edur">${ex.dur}</div><div class="badge ${urg}">${dl}</div></div>`;
+    d.onclick=()=>openExamModal(ex);
+    grid.appendChild(d);
+  });
+  if(!shown) grid.innerHTML=`<div style="text-align:center;padding:2rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem;">No exams here.</div>`;
+}
+
+function openExamModal(ex){
+  const days=daysDiff(ex.date);
+  const urg=urgClass(days);
+  const t=new Date(ex.date);
+  const tp=ex.time.match(/(\d+):(\d+)(am|pm)/i);
+  if(tp){ let h=parseInt(tp[1]); if(tp[3].toLowerCase()==='pm'&&h!==12) h+=12; t.setHours(h,parseInt(tp[2]),0,0); }
+  const diff=Math.max(0,t-new Date());
+  const cd_d=Math.floor(diff/86400000),cd_h=Math.floor((diff%86400000)/3600000),cd_m=Math.floor((diff%3600000)/60000),cd_s=Math.floor((diff%60000)/1000);
+  document.getElementById('examModalContent').innerHTML=`
+    <div style="margin-bottom:0.5rem;"><span class="badge ${urg}">${days<0?'Past':days===0?'Today':days+'d away'}</span></div>
+    <h3 style="margin-bottom:0.25rem;">${ex.subject}</h3>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);margin-bottom:1rem;">${ex.board} · ${ex.code}</div>
+    ${days>=0?`<div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">⏱ Time Until Exam</div>
+    <div class="exam-detail-cd">
+      <div class="exam-detail-cd-block"><span class="exam-detail-cd-num">${String(cd_d).padStart(2,'0')}</span><span class="exam-detail-cd-label">Days</span></div>
+      <div class="exam-detail-cd-block"><span class="exam-detail-cd-num">${String(cd_h).padStart(2,'0')}</span><span class="exam-detail-cd-label">Hours</span></div>
+      <div class="exam-detail-cd-block"><span class="exam-detail-cd-num">${String(cd_m).padStart(2,'0')}</span><span class="exam-detail-cd-label">Mins</span></div>
+      <div class="exam-detail-cd-block"><span class="exam-detail-cd-num">${String(cd_s).padStart(2,'0')}</span><span class="exam-detail-cd-label">Secs</span></div>
+    </div>`:''}
+    <div style="margin-top:1rem;">
+      <div class="exam-info-row"><span class="exam-info-label">Date</span><span class="exam-info-value">${fmtDateFull(ex.date)}</span></div>
+      <div class="exam-info-row"><span class="exam-info-label">Start Time</span><span class="exam-info-value">${ex.time}</span></div>
+      <div class="exam-info-row"><span class="exam-info-label">Duration</span><span class="exam-info-value">${ex.dur}</span></div>
+      <div class="exam-info-row"><span class="exam-info-label">Board</span><span class="exam-info-value">${ex.board}</span></div>
+      <div class="exam-info-row"><span class="exam-info-label">Code</span><span class="exam-info-value" style="font-family:'JetBrains Mono',monospace;">${ex.code}</span></div>
+    </div>`;
+  document.getElementById('examModal').classList.add('open');
+}
+function filterExams(f,btn){ document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderExamGrid('examGrid',f); }
+
+function refreshDash(){
+  updateHero();
+  renderExamGrid('dashExamGrid','upcoming',5);
+  const upcoming=exams.filter(e=>daysDiff(e.date)>=0);
+  const next=upcoming[0];
+  const pps=ld('pastpapers',[]);
+  const avg=pps.length?Math.round(pps.reduce((s,p)=>s+parseFloat(p.score||0),0)/pps.length):0;
+  document.getElementById('dashStats').innerHTML=`Exams left: <span style="color:var(--text);font-weight:600">${upcoming.length}</span><br>Next: <span style="color:var(--accent);font-weight:600">${next?fmtDate(next.date)+' — '+next.subject.split('—')[0].trim():'All done!'}</span><br>Papers logged: <span style="color:var(--text);font-weight:600">${pps.length}</span><br>Avg score: <span style="color:${avg>=70?'var(--fine)':avg>=50?'var(--soon)':'var(--urgent)'}; font-weight:600">${pps.length?avg+'%':'—'}</span>`;
+  const todayIdx=(new Date().getDay()+6)%7;
+  const routine=ld('routine',{});
+  const tt=routine[DAYS[todayIdx]]||[];
+  const todayEl=document.getElementById('dashToday');
+  todayEl.innerHTML=tt.length?tt.map(t=>`<div style="display:flex;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid var(--border);font-size:0.76rem;"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:0.6rem;flex-shrink:0;font-weight:600">${t.time||'—'}</span><span style="font-weight:500">${t.subject}</span></div>`).join('')
+    :'<span style="color:var(--muted);font-size:0.74rem;">No tasks today.</span>';
+  const bySubj={};
+  pps.forEach(p=>{ if(!bySubj[p.subject]) bySubj[p.subject]={c:0,t:0}; bySubj[p.subject].c++; bySubj[p.subject].t+=parseFloat(p.score||0); });
+  const ppEl=document.getElementById('dashPP');
+  ppEl.innerHTML=Object.keys(bySubj).length
+    ?Object.entries(bySubj).map(([s,v])=>`${subjByKey(s).label||s}: <span style="color:var(--text);font-weight:600">${Math.round(v.t/v.c)}% avg (${v.c} papers)</span>`).join('<br>')
+    :'No papers logged yet.';
+  showTipAt(tipIdx);
+}
+
+function renderRoutine(){
+  const routine=ld('routine',{}), todayName=DAYS[(new Date().getDay()+6)%7];
+  const grid=document.getElementById('routineGrid'); grid.innerHTML='';
+  DAYS.forEach(day=>{
+    const col=document.createElement('div'); col.className='day-col'+(day===todayName?' today':'');
+    const tasks=routine[day]||[];
+    col.innerHTML=`<div class="day-col-head">${day.slice(0,3)}</div><div class="day-tasks">${tasks.map((t,i)=>`<div class="task-chip" style="border-left-color:${t.color||'#6366f1'}"><div><div class="tc-text">${t.subject}</div><div class="tc-time">${t.time||''}${t.dur?' · '+t.dur:''}</div></div><button class="tc-del" onclick="deleteTask('${day}',${i})">✕</button></div>`).join('')}</div><div class="add-task-row"><button class="add-task-btn" onclick="openTaskModal('${day}')">+ Add</button></div>`;
+    grid.appendChild(col);
+  });
+}
+function openTaskModal(day){ document.getElementById('taskDay').value=day; ['taskTime','taskSubject','taskDur'].forEach(id=>document.getElementById(id).value=''); document.getElementById('taskModal').classList.add('open'); }
+function closeTaskModal(){ document.getElementById('taskModal').classList.remove('open'); }
+function saveTask(){
+  const day=document.getElementById('taskDay').value, r=ld('routine',{});
+  if(!r[day]) r[day]=[];
+  r[day].push({time:document.getElementById('taskTime').value,subject:document.getElementById('taskSubject').value,dur:document.getElementById('taskDur').value,color:document.getElementById('taskColor').value});
+  cloudSave('routine',r); closeTaskModal(); renderRoutine();
+}
+function deleteTask(day,idx){ const r=ld('routine',{}); r[day].splice(idx,1); cloudSave('routine',r); renderRoutine(); }
+function addRoutineBlock(){
+  const day=document.getElementById('rtDay').value, r=ld('routine',{});
+  if(!r[day]) r[day]=[];
+  r[day].push({time:document.getElementById('rtTime').value,subject:document.getElementById('rtSubject').value,dur:document.getElementById('rtDur').value,color:document.getElementById('rtColor').value});
+  cloudSave('routine',r); renderRoutine();
+  ['rtSubject','rtTime','rtDur'].forEach(id=>document.getElementById(id).value='');
+}
+
+let ppFilterSubj = 'all';
+let ppChartSubj = null;
+let ppChart = null;
+let pendingFile = null;
+
+function updateConfLabel(){
+  const v=parseInt(document.getElementById('ppConfidence').value);
+  document.getElementById('confLabel').textContent=confEmoji(v)+' '+confText(v);
+}
+
+function renderPPFilterTabs(){
+  const pps=ld('pastpapers',[]);
+  const usedKeys=[...new Set(pps.map(p=>p.subject))];
+  const tabsEl=document.getElementById('ppFilterTabs');
+  tabsEl.innerHTML='<button class="subj-pill'+(ppFilterSubj==='all'?' active':'')+'" style="'+(ppFilterSubj==='all'?'background:var(--accent);':'')+'border-color:var(--accent);color:'+(ppFilterSubj==='all'?'white':'var(--accent)')+';" onclick="setPPFilter(\'all\')">All</button>'
+    +usedKeys.map(k=>{ const s=subjByKey(k); const active=ppFilterSubj===k; return `<button class="subj-pill${active?' active':''}" style="${active?`background:${s.color};border-color:${s.color};color:white`:`color:${s.color};border-color:${s.color}`}" onclick="setPPFilter('${k}')">${s.label}</button>`; }).join('');
+}
+
+function setPPFilter(key){ ppFilterSubj=key; renderPP(); }
+
+function renderPPChartTabs(){
+  const pps=ld('pastpapers',[]);
+  const usedKeys=[...new Set(pps.map(p=>p.subject))];
+  if(!ppChartSubj&&usedKeys.length) ppChartSubj=usedKeys[0];
+  const tabsEl=document.getElementById('ppChartTabs');
+  if(!usedKeys.length){ tabsEl.innerHTML=''; return; }
+  tabsEl.innerHTML=usedKeys.map(k=>{ const s=subjByKey(k); const active=ppChartSubj===k; return `<button class="subj-pill${active?' active':''}" style="${active?`background:${s.color};border-color:${s.color};color:white`:`color:${s.color};border-color:${s.color}`}" onclick="switchPPChart('${k}')">${s.label}</button>`; }).join('');
+}
+
+function switchPPChart(key){ ppChartSubj=key; renderPPChart(); renderPPChartTabs(); }
+
+function renderPPChart(){
+  const pps=ld('pastpapers',[]);
+  const area=document.getElementById('ppChartArea');
+  if(!pps.length){ area.innerHTML='<div class="no-data-chart">Log past papers below to see your grade trend appear here.</div>'; return; }
+  const usedKeys=[...new Set(pps.map(p=>p.subject))];
+  if(!ppChartSubj) ppChartSubj=usedKeys[0];
+  const subPPs=pps.filter(p=>p.subject===ppChartSubj).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  if(!subPPs.length){ area.innerHTML='<div class="no-data-chart">No papers logged for this subject yet.</div>'; return; }
+  if(ppChart){ ppChart.destroy(); ppChart=null; }
+  const subj=subjByKey(ppChartSubj);
+  area.innerHTML='<canvas id="ppCanvas" height="200"></canvas>';
+  const ctx=document.getElementById('ppCanvas').getContext('2d');
+  ppChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:subPPs.map(p=>p.paper+' ('+p.date+')'),
+      datasets:[
+        { label:'Score %', data:subPPs.map(p=>parseFloat(p.score)), borderColor:subj.color, backgroundColor:subj.color+'20', fill:true, tension:0.4, pointRadius:5, pointBackgroundColor:subj.color, borderWidth:2.5 },
+        { label:'Confidence (×20)', data:subPPs.map(p=>parseFloat(p.confidence||3)*20), borderColor:'#94a3b8', backgroundColor:'transparent', fill:false, tension:0.4, pointRadius:4, pointBackgroundColor:'#94a3b8', borderWidth:1.5, borderDash:[4,3] }
+      ]
+    },
+    options:{
+      responsive:true, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{labels:{font:{family:'Inter',size:11},color:'#475569',boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>{ if(ctx.datasetIndex===1) return `Confidence: ${Math.round(ctx.parsed.y/20)}/5`; return `Score: ${ctx.parsed.y}%`; }}} },
+      scales:{
+        x:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:9},color:'#94a3b8',maxRotation:20}},
+        y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8',callback:v=>v+'%'},min:0,max:100}
+      }
+    }
+  });
+}
+
+function renderPP(){
+  const pps=ld('pastpapers',[]);
+  const avg=pps.length?Math.round(pps.reduce((s,p)=>s+parseFloat(p.score||0),0)/pps.length):0;
+  const best=pps.length?Math.max(...pps.map(p=>parseFloat(p.score||0))):0;
+  const bySubj={}; pps.forEach(p=>{ if(!bySubj[p.subject]) bySubj[p.subject]=0; bySubj[p.subject]++; });
+  const top=Object.entries(bySubj).sort((a,b)=>b[1]-a[1])[0];
+  const avgConf=pps.length?Math.round(pps.reduce((s,p)=>s+parseFloat(p.confidence||3),0)/pps.length):0;
+  document.getElementById('ppStats').innerHTML=`
+    <div class="pp-stat"><div class="pp-stat-num" style="color:var(--accent)">${pps.length}</div><div class="pp-stat-label">Papers Done</div></div>
+    <div class="pp-stat"><div class="pp-stat-num" style="color:${avg>=70?'var(--fine)':avg>=50?'var(--soon)':'var(--urgent)'}">${pps.length?avg+'%':'—'}</div><div class="pp-stat-label">Avg Score</div></div>
+    <div class="pp-stat"><div class="pp-stat-num" style="color:var(--fine)">${pps.length?best+'%':'—'}</div><div class="pp-stat-label">Best Score</div></div>
+    <div class="pp-stat"><div class="pp-stat-num" style="font-size:0.85rem;line-height:1.4;">${top?subjByKey(top[0]).label.split(' ').slice(-1)[0]:'—'}</div><div class="pp-stat-label">Most Practised</div></div>
+    <div class="pp-stat"><div class="pp-stat-num" style="color:var(--soon)">${pps.length?confEmoji(avgConf):'—'}</div><div class="pp-stat-label">Avg Confidence</div></div>`;
+  renderPPChartTabs();
+  renderPPChart();
+  renderPPFilterTabs();
+  const filtered=ppFilterSubj==='all'?pps:pps.filter(p=>p.subject===ppFilterSubj);
+  const body=document.getElementById('ppBody'); body.innerHTML='';
+  document.getElementById('ppEmpty').style.display=filtered.length?'none':'block';
+  filtered.forEach(p=>{
+    const tr=document.createElement('tr');
+    let fileCell='—';
+    if(p.file){
+      if(p.file.dataUrl) fileCell=`<button class="file-view-btn" onclick="viewAttachedFile(${p.id})">📎 ${p.file.name.length>16?p.file.name.slice(0,13)+'…':p.file.name}</button>`;
+      else fileCell=`<span style="color:var(--muted);font-size:0.63rem;">📎 ${p.file.name.length>16?p.file.name.slice(0,13)+'…':p.file.name}</span>`;
+    }
+    const subj=subjByKey(p.subject);
+    tr.innerHTML=`
+      <td style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);">${p.date}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:${subj.color};display:inline-block;flex-shrink:0;"></span>${subj.label}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;">${p.paper}</td>
+      <td><span class="score-pill score-${sBand(p.score)}">${p.score}% · ${sLabel(p.score)}</span></td>
+      <td style="font-size:0.82rem;text-align:center;">${confEmoji(p.confidence||3)} <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">${p.confidence||3}/5</span></td>
+      <td><div style="display:flex;align-items:center;gap:0.4rem;"><div style="width:60px;height:5px;border-radius:3px;background:var(--border);"><div style="height:5px;border-radius:3px;background:${subj.color};width:${p.coverage||0}%"></div></div><span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);">${p.coverage||0}%</span></div></td>
+      <td>${fileCell}</td>
+      <td style="color:var(--muted);font-size:0.72rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.notes||'—'}</td>
+      <td><button class="btn btn-danger" style="font-size:0.6rem;padding:0.18rem 0.45rem;" onclick="deletePP(${p.id})">✕</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+function addPP(){
+  const paper=document.getElementById('ppPaper').value.trim(), score=document.getElementById('ppScore').value.trim();
+  if(!paper||!score){ alert('Please fill in the paper name and score!'); return; }
+  const pps=ld('pastpapers',[]);
+  const entry={
+    id:Date.now(),
+    subject:document.getElementById('ppSubject').value,
+    paper, score,
+    date:document.getElementById('ppDate').value,
+    confidence:parseInt(document.getElementById('ppConfidence').value),
+    coverage:parseInt(document.getElementById('ppCoverage').value),
+    notes:document.getElementById('ppNotes').value.trim(),
+    file:pendingFile?{name:pendingFile.name,dataUrl:pendingFile.dataUrl,type:pendingFile.type,size:pendingFile.size}:null
+  };
+  pps.unshift(entry);
+  try{ cloudSave('pastpapers',pps); }
+  catch(e){ entry.file=entry.file?{name:entry.file.name,type:entry.file.type,size:entry.file.size,dataUrl:null}:null; pps[0]=entry; cloudSave('pastpapers',pps); alert('File too large for storage — entry saved without attachment.'); }
+  ['ppPaper','ppScore','ppNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ppConfidence').value=3; updateConfLabel();
+  document.getElementById('ppCoverage').value=50; document.getElementById('coverageLabel').textContent='50%';
+  clearPendingFile();
+  ppChartSubj=entry.subject;
+  renderPP();
+}
+
+function deletePP(id){ cloudSave('pastpapers',ld('pastpapers',[]).filter(p=>p.id!==id)); renderPP(); }
+
+function handleDragOver(e){ e.preventDefault(); document.getElementById('fileDropZone').classList.add('drag-over'); }
+function handleDragLeave(){ document.getElementById('fileDropZone').classList.remove('drag-over'); }
+function handleFileDrop(e){ e.preventDefault(); document.getElementById('fileDropZone').classList.remove('drag-over'); const file=e.dataTransfer.files[0]; if(file) processFile(file); }
+function handleFileSelect(e){ const file=e.target.files[0]; if(file) processFile(file); }
+function processFile(file){
+  if(file.size>52428800){ alert('File too large — max 50MB.'); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{ pendingFile={name:file.name,dataUrl:e.target.result,type:file.type,size:file.size}; showFilePreview(); };
+  reader.readAsDataURL(file);
+}
+function showFilePreview(){ const prev=document.getElementById('fileAttachedPreview'); prev.style.display='block'; prev.innerHTML=`<div class="file-attached">📎 <span>${pendingFile.name}</span> <span style="color:var(--muted);font-size:0.6rem;">(${(pendingFile.size/1024).toFixed(0)}KB)</span><button class="fa-remove" onclick="clearPendingFile()">✕</button></div>`; }
+function clearPendingFile(){ pendingFile=null; document.getElementById('fileAttachedPreview').style.display='none'; document.getElementById('ppFile').value=''; }
+function viewAttachedFile(ppId){
+  const pp=ld('pastpapers',[]).find(p=>p.id===ppId); if(!pp||!pp.file) return;
+  document.getElementById('fileViewTitle').textContent=pp.file.name;
+  const content=document.getElementById('fileViewContent');
+  if(pp.file.type&&pp.file.type.startsWith('image/')) content.innerHTML=`<img src="${pp.file.dataUrl}" style="max-width:100%;border-radius:0.5rem;">`;
+  else if(pp.file.type==='application/pdf') content.innerHTML=`<iframe src="${pp.file.dataUrl}" style="width:100%;height:70vh;border:none;border-radius:0.5rem;"></iframe>`;
+  else content.innerHTML=`<div style="text-align:center;padding:1rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.8rem;"><div style="font-size:2rem;margin-bottom:0.5rem;">📄</div><div>${pp.file.name}</div><div style="margin-top:1rem;"><a href="${pp.file.dataUrl}" download="${pp.file.name}" class="btn">⬇ Download</a></div></div>`;
+  document.getElementById('fileViewModal').classList.add('open');
+}
+
+let trackerState = {};
+let trackerChartSubj = null;
+let trackerChart = null;
+
+function renderTracker(){
+  trackerState=ld('trackerCurrent',{});
+  SUBJECTS.forEach(s=>{ if(!trackerState[s.key]) trackerState[s.key]={done:0,conf:0}; });
+  const grid=document.getElementById('trackerGrid'); grid.innerHTML='';
+  SUBJECTS.forEach(s=>{
+    const st=trackerState[s.key]||{done:0,conf:0};
+    const row=document.createElement('div'); row.className='tracker-row';
+    const stars=[1,2,3,4,5].map(n=>`<button class="star-btn${n<=st.conf?' lit':''}" onclick="setConf('${s.key}',${n})">★</button>`).join('');
+    row.innerHTML=`<div class="tracker-subj" style="border-left-color:${s.color}">${s.label}</div>
+      <div class="tracker-controls">
+        <div><div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:0.3rem;">Confidence</div>
+          <div class="confidence-stars" id="stars-${s.key}">${stars}</div></div>
+        <div><div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:0.3rem;">Coverage</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <input type="range" class="done-slider" id="slider-${s.key}" min="0" max="100" value="${st.done}" oninput="setDone('${s.key}',this.value)">
+            <span class="tracker-pct" id="pct-${s.key}">${st.done}%</span>
+          </div></div>
+      </div>
+      <div class="tracker-bar-wrap"><div class="tracker-bar-fill" id="bar-${s.key}" style="width:${st.done}%;background:${s.color}"></div></div>`;
+    grid.appendChild(row);
+  });
+  renderTrackerChart();
+  renderHistory();
+}
+
+function setConf(key,val){ if(!trackerState[key]) trackerState[key]={done:0,conf:0}; trackerState[key].conf=val; sv('trackerCurrent',trackerState); document.querySelectorAll(`#stars-${key} .star-btn`).forEach((btn,i)=>btn.classList.toggle('lit',(i+1)<=val)); }
+function setDone(key,val){ if(!trackerState[key]) trackerState[key]={done:0,conf:0}; trackerState[key].done=parseInt(val); sv('trackerCurrent',trackerState); const p=document.getElementById('pct-'+key); if(p) p.textContent=val+'%'; const b=document.getElementById('bar-'+key); if(b) b.style.width=val+'%'; }
+function saveTrackerSnapshot(){
+  const snaps=ld('trackerSnaps',[]); const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  const data=SUBJECTS.map(s=>({key:s.key,label:s.label,done:trackerState[s.key]?.done||0,conf:trackerState[s.key]?.conf||0}));
+  snaps.push({date:today,ts:Date.now(),data});
+  cloudSave('trackerSnaps',snaps);
+  document.getElementById('trackerSaveStatus').textContent='✓ Saved — '+today;
+  renderTrackerChart(); renderHistory();
+}
+function renderTrackerChart(){
+  const snaps=ld('trackerSnaps',[]);
+  const area=document.getElementById('trackerChartArea');
+  const tabsEl=document.getElementById('trackerChartTabs');
+  if(!snaps.length){ area.innerHTML='<div class="no-data-chart">Save a snapshot to start seeing your progress graph!</div>'; tabsEl.innerHTML=''; return; }
+  if(!trackerChartSubj) trackerChartSubj=SUBJECTS[0].key;
+  tabsEl.innerHTML=SUBJECTS.map(s=>{ const active=s.key===trackerChartSubj; return `<button class="subj-pill${active?' active':''}" style="${active?`background:${s.color};border-color:${s.color};color:white`:`color:${s.color};border-color:${s.color}`}" onclick="switchTrackerChart('${s.key}')">${s.label.split(' ').pop()}</button>`; }).join('');
+  if(trackerChart){ trackerChart.destroy(); trackerChart=null; }
+  const subj=SUBJECTS.find(s=>s.key===trackerChartSubj);
+  const labels=snaps.map(s=>s.date);
+  const doneData=snaps.map(s=>(s.data.find(d=>d.key===trackerChartSubj)||{done:0}).done);
+  const confData=snaps.map(s=>((s.data.find(d=>d.key===trackerChartSubj)||{conf:0}).conf)*20);
+  area.innerHTML='<canvas id="trackerCanvas" height="200"></canvas>';
+  const ctx=document.getElementById('trackerCanvas').getContext('2d');
+  trackerChart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Coverage %',data:doneData,borderColor:subj.color,backgroundColor:subj.color+'20',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:subj.color,borderWidth:2.5},
+      {label:'Confidence %',data:confData,borderColor:'#94a3b8',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:4,pointBackgroundColor:'#94a3b8',borderWidth:1.5,borderDash:[4,3]}
+    ]},
+    options:{
+      responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{font:{family:'Inter',size:11},color:'#475569',boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>{ if(ctx.datasetIndex===1) return `Confidence: ${Math.round(ctx.parsed.y/20)}/5`; return `Coverage: ${ctx.parsed.y}%`; }}}},
+      scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:9},color:'#94a3b8'}},y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8',callback:v=>v+'%'},min:0,max:100}}
+    }
+  });
+}
+function switchTrackerChart(key){ trackerChartSubj=key; renderTrackerChart(); }
+function renderHistory(){
+  const snaps=ld('trackerSnaps',[]);
+  const body=document.getElementById('historyBody');
+  document.getElementById('historyEmpty').style.display=snaps.length?'none':'block';
+  body.innerHTML='';
+  const rows=[]; snaps.forEach(snap=>snap.data.forEach(d=>rows.push({date:snap.date,ts:snap.ts,...d})));
+  rows.sort((a,b)=>b.ts-a.ts).slice(0,60).forEach(r=>{
+    const s=SUBJECTS.find(x=>x.key===r.key)||{color:'#6366f1'};
+    const tr=document.createElement('tr'); tr.style.borderBottom='1px solid var(--border)';
+    const stars='★'.repeat(r.conf)+'☆'.repeat(5-r.conf);
+    tr.innerHTML=`<td style="padding:0.5rem 0.75rem;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);">${r.date}</td><td style="padding:0.5rem 0.75rem;font-size:0.78rem;font-weight:500;"><span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:7px;height:7px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>${r.label}</span></td><td style="padding:0.5rem 0.75rem;"><div style="display:flex;align-items:center;gap:0.5rem;"><div style="height:5px;border-radius:3px;background:var(--border);width:80px;"><div style="height:5px;border-radius:3px;background:${s.color};width:${r.done}%"></div></div><span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);">${r.done}%</span></div></td><td style="padding:0.5rem 0.75rem;font-size:0.8rem;color:#f59e0b;">${stars}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+let fcCards=[], fcIdx=0;
+function renderFC(){ fcCards=ld('flashcards',[]); fcIdx=Math.min(fcIdx,Math.max(0,fcCards.length-1)); updateFCDisplay(); renderFCList(); }
+function updateFCDisplay(){
+  document.getElementById('fcCard').classList.remove('flipped');
+  if(!fcCards.length){ document.getElementById('fcFront').textContent='No cards yet!'; document.getElementById('fcBack').textContent=''; document.getElementById('fcCounter').textContent='0 / 0'; return; }
+  const c=fcCards[fcIdx];
+  document.getElementById('fcFront').innerHTML=`<div style="font-size:0.58rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">${c.subject}</div>${c.q}`;
+  document.getElementById('fcBack').textContent=c.a;
+  document.getElementById('fcCounter').textContent=`${fcIdx+1} / ${fcCards.length}`;
+}
+function flipCard(){ document.getElementById('fcCard').classList.toggle('flipped'); }
+function prevCard(){ if(fcCards.length){ fcIdx=(fcIdx-1+fcCards.length)%fcCards.length; updateFCDisplay(); } }
+function nextCard(){ if(fcCards.length){ fcIdx=(fcIdx+1)%fcCards.length; updateFCDisplay(); } }
+function shuffleCards(){ fcCards.sort(()=>Math.random()-0.5); fcIdx=0; updateFCDisplay(); }
+function markKnown(){ if(fcCards.length){ fcCards[fcIdx].known=true; sv('flashcards',fcCards); nextCard(); } }
+function markUnknown(){ if(fcCards.length){ fcCards[fcIdx].known=false; sv('flashcards',fcCards); nextCard(); } }
+function addCard(){
+  const q=document.getElementById('fcQ').value.trim(), a=document.getElementById('fcA').value.trim();
+  if(!q||!a){ alert('Fill in both question and answer!'); return; }
+  fcCards=ld('flashcards',[]); fcCards.push({id:Date.now(),subject:document.getElementById('fcSubject').value,q,a,known:null});
+  cloudSave('flashcards',fcCards); document.getElementById('fcQ').value=''; document.getElementById('fcA').value='';
+  fcIdx=fcCards.length-1; updateFCDisplay(); renderFCList();
+}
+function deleteCard(id){ fcCards=ld('flashcards',[]).filter(c=>c.id!==id); cloudSave('flashcards',fcCards); fcIdx=Math.max(0,Math.min(fcIdx,fcCards.length-1)); updateFCDisplay(); renderFCList(); }
+function renderFCList(){
+  const list=document.getElementById('fcList');
+  list.innerHTML=fcCards.length?fcCards.map(c=>`<div class="fc-list-item"><span style="flex:1;font-weight:500;">${c.q.slice(0,50)}${c.q.length>50?'…':''}</span><span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:${c.known===true?'var(--fine)':c.known===false?'var(--urgent)':'var(--muted)'};">${c.known===true?'✓':c.known===false?'✗':'—'}</span><button class="btn btn-danger" style="font-size:0.58rem;padding:0.15rem 0.4rem;" onclick="deleteCard(${c.id})">✕</button></div>`).join('')
+    :'<div style="color:var(--muted);font-size:0.72rem;text-align:center;padding:1rem;">No cards yet.</div>';
+}
+
+let currentNoteId=null;
+function renderNotes(){
+  const notes=ld('notes',[]);
+  const sidebar=document.getElementById('notesSidebar'); sidebar.innerHTML='';
+  notes.forEach(n=>{ const t=document.createElement('div'); t.className='note-tab'+(n.id===currentNoteId?' active':''); t.innerHTML=`<span class="nt-name">${n.title||'Untitled'}</span><button class="nt-del" onclick="deleteNote(${n.id},event)">✕</button>`; t.onclick=()=>openNote(n.id); sidebar.appendChild(t); });
+  if(!notes.length) sidebar.innerHTML='<div style="color:var(--muted);font-size:0.72rem;padding:0.5rem;">No notes yet.</div>';
+  if(currentNoteId){ const n=notes.find(x=>x.id===currentNoteId); if(n){ document.getElementById('noteTitleInput').value=n.title||''; document.getElementById('noteBodyInput').value=n.body||''; } }
+  else { document.getElementById('noteTitleInput').value=''; document.getElementById('noteBodyInput').value=''; }
+}
+function addNote(){ const notes=ld('notes',[]); const nn={id:Date.now(),title:'New Note',body:''}; notes.unshift(nn); cloudSave('notes',notes); currentNoteId=nn.id; renderNotes(); }
+function openNote(id){ currentNoteId=id; renderNotes(); }
+function deleteNote(id,e){ e.stopPropagation(); const notes=ld('notes',[]).filter(n=>n.id!==id); cloudSave('notes',notes); if(currentNoteId===id) currentNoteId=notes[0]?.id||null; renderNotes(); }
+function saveCurrentNote(){
+  if(!currentNoteId) return;
+  const notes=ld('notes',[]); const n=notes.find(x=>x.id===currentNoteId); if(!n) return;
+  n.title=document.getElementById('noteTitleInput').value; n.body=document.getElementById('noteBodyInput').value;
+  cloudSave('notes',notes); document.getElementById('notesSaved').textContent='✓ saved '+new Date().toLocaleTimeString('en-GB'); renderNotes();
+}
+
+let pomoRunning=false, pomoSecs=25*60, pomoInterval=null, pomoMode='work', pomoSession=1;
+const CIRC=301.6;
+function updatePomoRing(){
+  const total=(pomoMode==='work'?parseInt(document.getElementById('pomoWorkMin').value||25):pomoMode==='break'?parseInt(document.getElementById('pomoBreakMin').value||5):15)*60;
+  const r=document.getElementById('pomoRing'); if(r) r.style.strokeDashoffset=CIRC*(1-pomoSecs/total);
+  const m=Math.floor(pomoSecs/60),s=pomoSecs%60;
+  const pt=document.getElementById('pomoTime'); if(pt) pt.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const pl=document.getElementById('pomoLbl'); if(pl) pl.textContent=pomoMode==='work'?'Focus':pomoMode==='break'?'Break':'Long Break';
+  const ps=document.getElementById('pomoSessions'); if(ps) ps.textContent=`Session ${pomoSession} of 4`;
+}
+function setPomoMode(mode){ clearInterval(pomoInterval); pomoRunning=false; const pb=document.getElementById('pomoBtn'); if(pb) pb.textContent='▶ Start'; pomoMode=mode; pomoSecs=(mode==='work'?parseInt(document.getElementById('pomoWorkMin').value||25):mode==='break'?parseInt(document.getElementById('pomoBreakMin').value||5):15)*60; updatePomoRing(); }
+function togglePomo(){ if(pomoRunning){ clearInterval(pomoInterval); pomoRunning=false; document.getElementById('pomoBtn').textContent='▶ Resume'; } else { pomoRunning=true; document.getElementById('pomoBtn').textContent='⏸ Pause'; pomoInterval=setInterval(()=>{ if(pomoSecs<=0){ clearInterval(pomoInterval); pomoRunning=false; document.getElementById('pomoBtn').textContent='▶ Start'; if(pomoMode==='work'){ pomoSession=pomoSession%4+1; pomoSession===1?(setPomoMode('long'),alert('🌙 Long break!')):( setPomoMode('break'),alert('☕ Break!')); }else{ setPomoMode('work'); alert('🎯 Back to work!'); } return; } pomoSecs--; updatePomoRing(); },1000); } }
+function resetPomo(){ clearInterval(pomoInterval); pomoRunning=false; pomoMode='work'; pomoSession=1; pomoSecs=parseInt(document.getElementById('pomoWorkMin').value||25)*60; const pb=document.getElementById('pomoBtn'); if(pb) pb.textContent='▶ Start'; updatePomoRing(); }
+
+function renderChecklist(){
+  const body=document.getElementById('checklistBody'); if(!body) return; body.innerHTML=''; let checked=0;
+  SUBJECTS.forEach((s,i)=>{ const on=ld('chk_'+i,false); if(on) checked++; const row=document.createElement('div'); row.className='check-item'; row.innerHTML=`<label><input type="checkbox" ${on?'checked':''} onchange="toggleCheck(${i},this)"><div class="cbox">${on?'✓':''}</div><span style="${on?'text-decoration:line-through;color:var(--muted)':'font-weight:500'}">${s.label}</span></label>`; body.appendChild(row); });
+  const pct=Math.round(checked/SUBJECTS.length*100);
+  const cf=document.getElementById('checkFill'); if(cf) cf.style.width=pct+'%';
+  const cp=document.getElementById('checkPct'); if(cp) cp.textContent=`${checked}/${SUBJECTS.length} reviewed · ${pct}%`;
+}
+function toggleCheck(i,el){ sv('chk_'+i,el.checked); renderChecklist(); }
+function resetChecks(){ SUBJECTS.forEach((_,i)=>sv('chk_'+i,false)); renderChecklist(); }
+
+const tips=["🔁 <strong>Spaced Repetition</strong>: Review at increasing intervals — 1 day, 3 days, 1 week, 2 weeks. Dramatically improves retention.","✍️ <strong>Active Recall</strong>: Close your notes and write from memory. Far more effective than re-reading.","🧠 <strong>Feynman Technique</strong>: Explain a concept as if teaching a 10-year-old. If you can't, you don't fully understand it.","📅 <strong>Interleaving</strong>: Mix different subjects in one session. Feels harder but produces better long-term learning.","😴 <strong>Sleep is revision</strong>: Your brain consolidates memory during sleep. 8 hours beats late-night cramming.","🎯 <strong>Past Papers</strong>: Timed past papers are the best exam prep. Always check mark schemes after.","📖 <strong>Summarise in your own words</strong>: After reading, close the book and rewrite key points.","🌿 <strong>Environment</strong>: Phone in another room. Consistent, tidy, well-lit space. Your brain links location with focus.","🔢 <strong>Chunk it</strong>: Break big topics into small chunks. Master each before moving on.","💬 <strong>Teach someone</strong>: Explaining a topic to someone else reveals exactly where your gaps are."];
+let tipIdx=0;
+function showTipAt(i){ const t=tips[i]; ['tipCard','dashTip'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=t; }); }
+function cycleTip(){ tipIdx=(tipIdx+1)%tips.length; showTipAt(tipIdx); }
+function prevTip(){ tipIdx=(tipIdx-1+tips.length)%tips.length; showTipAt(tipIdx); }
+
+function calcGrade(){
+  const cur=parseFloat(document.getElementById('gcCurrent').value), tgt=parseInt(document.getElementById('gcTarget').value), res=document.getElementById('gcResult');
+  if(isNaN(cur)){ res.textContent='Enter your score above.'; return; }
+  const diff=tgt-cur;
+  res.innerHTML=diff<=0?`<span style="color:var(--fine)">✓ You've already hit this target! Score: ${cur}%</span>`:`Need <strong style="color:var(--accent)">${diff.toFixed(1)}%</strong> more to reach your target.`;
+}
+
+function renderDaysUntil(){
+  const el=document.getElementById('daysUntil'); if(!el) return;
+  const seen=new Set(); const rows=[];
+  exams.forEach(ex=>{ if(!seen.has(ex.subjectKey)){ seen.add(ex.subjectKey); const s=subjByKey(ex.subjectKey); rows.push({label:s.label,color:s.color,d:daysDiff(ex.date)}); } });
+  el.innerHTML=rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border);font-size:0.75rem;"><span style="border-left:3px solid ${r.color};padding-left:0.5rem;font-weight:500;">${r.label}</span><span class="badge ${urgClass(r.d)}">${r.d<0?'Past':r.d===0?'Today!':r.d+'d'}</span></div>`).join('');
+}
+
+const rqs=[
+  {s:'Biology',q:'What is the process by which cells divide to produce identical daughter cells?',a:'Mitosis — the cell duplicates its DNA and divides into two genetically identical daughter cells.'},
+  {s:'Biology',q:'Define osmosis.',a:'The movement of water molecules from high to low water potential through a partially permeable membrane.'},
+  {s:'Biology',q:'What is the role of mitochondria?',a:'The site of aerobic respiration — they produce ATP (energy) for cellular processes.'},
+  {s:'Chemistry',q:'What is the difference between exothermic and endothermic?',a:'Exothermic releases heat (temperature rises). Endothermic absorbs heat (temperature falls).'},
+  {s:'Chemistry',q:'State the law of conservation of mass.',a:'Total mass of reactants = total mass of products. Mass cannot be created or destroyed.'},
+  {s:'Chemistry',q:'What is an ionic bond?',a:'A strong electrostatic force of attraction between oppositely charged ions formed by electron transfer from metal to non-metal.'},
+  {s:'Physics',q:"State Newton's Second Law.",a:'F = ma. Net force equals mass multiplied by acceleration.'},
+  {s:'Physics',q:"What is Ohm's Law?",a:'V = IR. Voltage = current × resistance (at constant temperature).'},
+  {s:'Mathematics',q:'State the quadratic formula.',a:'x = (−b ± √(b²−4ac)) / 2a, for equations ax² + bx + c = 0.'},
+  {s:'Mathematics',q:"What is Pythagoras's theorem?",a:'a² + b² = c², where c is the hypotenuse of a right-angled triangle.'},
+  {s:'Business Studies',q:'What is the difference between a sole trader and a limited company?',a:'A sole trader has unlimited liability. A limited company is a separate legal entity — shareholders have limited liability.'},
+  {s:'Business Studies',q:'Define cash flow.',a:'The movement of money into and out of a business. Positive cash flow = more in than out.'},
+  {s:'Computer Science',q:'What is a binary search?',a:'An efficient algorithm that halves the search space each time. Requires a sorted list.'},
+  {s:'English',q:'What is a semantic field?',a:'A group of words related in meaning or topic, e.g. war: battle, conflict, soldier, victory.'},
+];
+let cQ=null;
+function newRandomQ(){ cQ=rqs[Math.floor(Math.random()*rqs.length)]; const el=document.getElementById('randomQ'); const a=document.getElementById('randomA'); const rb=document.getElementById('revealBtn'); if(el){ el.innerHTML=`<span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">${cQ.s}</span><br><br>${cQ.q}`; if(a){a.style.display='none';} if(rb) rb.style.display='inline-flex'; } }
+function revealAnswer(){ if(!cQ) return; const a=document.getElementById('randomA'); a.textContent=cQ.a; a.style.display='block'; document.getElementById('revealBtn').style.display='none'; }
+
+updateClock(); setInterval(updateClock,1000); setInterval(updateHero,1000);
+document.getElementById('ppDate').value=new Date().toISOString().split('T')[0];
+updateConfLabel();
+
+document.addEventListener('firebase-ready', async ()=>{
+  const [routine,flashcards,notes,snaps,trackerCurrent,pastpapers]=await Promise.all([
+    cloudLoad('routine',{}), cloudLoad('flashcards',[]), cloudLoad('notes',[]),
+    cloudLoad('trackerSnaps',[]), cloudLoad('trackerCurrent',{}), cloudLoad('pastpapers',[])
+  ]);
+  sv('routine',routine); sv('flashcards',flashcards); sv('notes',notes);
+  sv('trackerSnaps',snaps); sv('trackerCurrent',trackerCurrent); sv('pastpapers',pastpapers);
+  refreshDash();
+});
+
+refreshDash(); showTipAt(0); newRandomQ();
+
+['taskModal','examModal','fileViewModal'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
