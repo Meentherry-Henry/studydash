@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyDash — Exam Revision</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c28;
+  --border: #2a2a3d;
+  --accent: #f0e040;
+  --text: #e8e8f0;
+  --muted: #7070a0;
+  --urgent: #ff4444;
+  --soon: #ff9944;
+  --fine: #44dd88;
+  --blue: #5599ff;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:999; }
+
+header { padding:1.25rem 2rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; position:sticky; top:0; background:rgba(10,10,15,0.95); backdrop-filter:blur(12px); z-index:50; }
+.logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; letter-spacing:-0.03em; color:var(--accent); }
+.logo span { color:var(--text); }
+.header-right { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--muted); text-align:right; line-height:1.6; }
+
+.nav-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--surface); overflow-x:auto; scrollbar-width:none; }
+.nav-tabs::-webkit-scrollbar { display:none; }
+.nav-tab { padding:0.9rem 1.4rem; font-family:'DM Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); cursor:pointer; border:none; background:none; white-space:nowrap; border-bottom:2px solid transparent; transition:all 0.15s; display:flex; align-items:center; gap:0.4rem; }
+.nav-tab:hover { color:var(--text); }
+.nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+.page { display:none; padding:2rem; max-width:1100px; margin:0 auto; animation:fadeIn 0.3s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
+
+.hero { background:linear-gradient(135deg,#1a1a0a,#1c1c28,#0a1a1a); border:1px solid var(--accent); border-radius:1rem; padding:2rem; margin-bottom:2rem; position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; top:-50%; left:-20%; width:400px; height:400px; background:radial-gradient(circle,rgba(240,224,64,0.07) 0%,transparent 70%); pointer-events:none; }
+.hero-label { font-family:'DM Mono',monospace; font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:0.4rem; }
+.hero-subject { font-family:'Syne',sans-serif; font-weight:800; font-size:clamp(1.3rem,3vw,2rem); line-height:1.1; margin-bottom:0.6rem; letter-spacing:-0.02em; }
+.hero-meta { font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); margin-bottom:1.25rem; }
+.countdown-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.6rem; max-width:400px; }
+.count-block { background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:0.5rem; padding:0.6rem; text-align:center; }
+.count-num { font-family:'Syne',sans-serif; font-weight:800; font-size:1.8rem; color:var(--accent); line-height:1; display:block; font-variant-numeric:tabular-nums; }
+.count-label { font-family:'DM Mono',monospace; font-size:0.55rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+
+.sec { font-family:'Syne',sans-serif; font-weight:700; font-size:0.82rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+.sec::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.exam-grid { display:grid; gap:0.5rem; margin-bottom:1.5rem; }
+.exam-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid transparent; border-radius:0.6rem; padding:0.9rem 1.1rem; display:grid; grid-template-columns:80px 1fr auto; gap:0.6rem; align-items:center; transition:background 0.15s; animation:slideIn 0.35s ease forwards; opacity:0; }
+.exam-card:hover { background:var(--surface2); border-left-color:var(--accent) !important; }
+.exam-card.urgent { border-left-color:var(--urgent); }
+.exam-card.soon { border-left-color:var(--soon); }
+.exam-card.fine { border-left-color:var(--fine); }
+.exam-card.past { opacity:0.35; }
+.eday { font-family:'DM Mono',monospace; }
+.eday .dl { color:var(--muted); font-size:0.6rem; text-transform:uppercase; letter-spacing:0.08em; }
+.eday .dn { font-size:1rem; font-weight:500; }
+.esubj { font-weight:500; font-size:0.87rem; line-height:1.3; }
+.esub2 { font-size:0.7rem; color:var(--muted); font-family:'DM Mono',monospace; margin-top:0.15rem; }
+.eright { text-align:right; }
+.etime { font-family:'DM Mono',monospace; font-size:0.72rem; }
+.edur { font-size:0.65rem; color:var(--muted); font-family:'DM Mono',monospace; }
+.badge { display:inline-block; padding:0.15rem 0.45rem; border-radius:0.25rem; font-family:'DM Mono',monospace; font-size:0.6rem; font-weight:500; margin-top:0.25rem; }
+.badge.urgent{background:rgba(255,68,68,0.15);color:var(--urgent);}
+.badge.soon{background:rgba(255,153,68,0.15);color:var(--soon);}
+.badge.fine{background:rgba(68,221,136,0.15);color:var(--fine);}
+.badge.past{background:rgba(112,112,160,0.15);color:var(--muted);}
+
+.filter-row { display:flex; gap:0.4rem; margin-bottom:1rem; flex-wrap:wrap; }
+.fbtn { background:var(--surface); border:1px solid var(--border); border-radius:0.4rem; color:var(--muted); padding:0.3rem 0.8rem; font-family:'DM Mono',monospace; font-size:0.68rem; cursor:pointer; transition:all 0.15s; }
+.fbtn:hover { color:var(--text); }
+.fbtn.active { background:var(--accent); color:#000; border-color:var(--accent); }
+
+.tools-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:1rem; }
+.tool-card { background:var(--surface); border:1px solid var(--border); border-radius:0.8rem; padding:1.25rem; }
+.tool-icon { font-size:1.4rem; margin-bottom:0.6rem; }
+.tool-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem; }
+.tool-desc { font-size:0.78rem; color:var(--muted); line-height:1.5; margin-bottom:0.9rem; }
+
+.btn { display:inline-flex; align-items:center; gap:0.3rem; background:var(--accent); color:#000; border:none; border-radius:0.4rem; padding:0.4rem 1rem; font-family:'DM Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer; transition:opacity 0.15s; }
+.btn:hover { opacity:0.85; }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { background:var(--border); opacity:1; }
+.btn-danger { background:rgba(255,68,68,0.15); color:var(--urgent); border:1px solid rgba(255,68,68,0.3); }
+.btn-danger:hover { background:rgba(255,68,68,0.25); opacity:1; }
+.btn-row { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; }
+
+.pomo-ring { position:relative; width:120px; height:120px; margin:0 auto 0.75rem; }
+.pomo-ring svg { transform:rotate(-90deg); }
+.ring-bg { fill:none; stroke:var(--border); stroke-width:8; }
+.ring-fg { fill:none; stroke:var(--accent); stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+.pomo-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.pomo-time-txt { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; color:var(--accent); line-height:1; }
+.pomo-lbl { font-family:'DM Mono',monospace; font-size:0.5rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+
+input[type=text], input[type=date], input[type=number], select, textarea { background:var(--surface2); border:1px solid var(--border); border-radius:0.4rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.82rem; padding:0.45rem 0.7rem; outline:none; width:100%; }
+input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+select option { background:var(--surface2); }
+label { font-size:0.75rem; color:var(--muted); display:block; margin-bottom:0.3rem; font-family:'DM Mono',monospace; }
+.form-row { margin-bottom:0.75rem; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+textarea { resize:vertical; min-height:70px; line-height:1.5; }
+
+.days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:0.5rem; margin-bottom:1.5rem; }
+.day-col { background:var(--surface); border:1px solid var(--border); border-radius:0.6rem; overflow:hidden; min-height:180px; }
+.day-col-head { background:var(--surface2); padding:0.5rem; text-align:center; font-family:'DM Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); border-bottom:1px solid var(--border); }
+.day-col.today .day-col-head { color:var(--accent); border-bottom-color:var(--accent); }
+.day-tasks { padding:0.4rem; display:flex; flex-direction:column; gap:0.3rem; }
+.task-chip { background:var(--surface2); border-radius:0.3rem; padding:0.35rem 0.45rem; font-size:0.68rem; display:flex; align-items:flex-start; justify-content:space-between; gap:0.3rem; border-left:2px solid var(--accent); }
+.tc-text { flex:1; line-height:1.3; }
+.tc-del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.7rem; padding:0; flex-shrink:0; }
+.tc-del:hover { color:var(--urgent); }
+.tc-time { font-family:'DM Mono',monospace; font-size:0.58rem; color:var(--muted); }
+.add-task-row { padding:0.4rem; border-top:1px solid var(--border); }
+.add-task-btn { width:100%; background:none; border:1px dashed var(--border); border-radius:0.3rem; color:var(--muted); font-size:0.65rem; font-family:'DM Mono',monospace; padding:0.35rem; cursor:pointer; transition:all 0.15s; }
+.add-task-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+.pp-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+.pp-table th { font-family:'DM Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); padding:0.6rem 0.8rem; border-bottom:1px solid var(--border); text-align:left; }
+.pp-table td { padding:0.65rem 0.8rem; border-bottom:1px solid rgba(42,42,61,0.5); vertical-align:middle; }
+.pp-table tr:hover td { background:var(--surface2); }
+.score-pill { display:inline-block; padding:0.15rem 0.5rem; border-radius:1rem; font-family:'DM Mono',monospace; font-size:0.68rem; font-weight:500; }
+.score-a{background:rgba(68,221,136,0.15);color:var(--fine);}
+.score-b{background:rgba(85,153,255,0.15);color:var(--blue);}
+.score-c{background:rgba(255,153,68,0.15);color:var(--soon);}
+.score-d{background:rgba(255,68,68,0.15);color:var(--urgent);}
+.pp-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:0.75rem; margin-bottom:1.5rem; }
+.pp-stat { background:var(--surface); border:1px solid var(--border); border-radius:0.6rem; padding:0.9rem 1rem; }
+.pp-stat-num { font-family:'Syne',sans-serif; font-weight:800; font-size:1.6rem; color:var(--accent); line-height:1; }
+.pp-stat-label { font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--muted); text-transform:uppercase; margin-top:0.2rem; }
+
+.fc-card { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:2rem; text-align:center; min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.15s; position:relative; overflow:hidden; }
+.fc-card:hover { transform:translateY(-2px); }
+.fc-front { font-family:'Syne',sans-serif; font-weight:700; font-size:1.05rem; }
+.fc-back { font-size:0.85rem; line-height:1.6; display:none; }
+.fc-card.flipped .fc-front { display:none; }
+.fc-card.flipped .fc-back { display:block; color:var(--text); }
+.fc-card.flipped { border-color:var(--accent); background:rgba(240,224,64,0.04); }
+.fc-hint { position:absolute; bottom:0.6rem; left:50%; transform:translateX(-50%); font-family:'DM Mono',monospace; font-size:0.56rem; color:var(--muted); white-space:nowrap; }
+.fc-nav { display:flex; align-items:center; justify-content:center; gap:1rem; margin:0.75rem 0; font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); }
+.fc-list { display:grid; gap:0.4rem; max-height:220px; overflow-y:auto; }
+.fc-list-item { background:var(--surface2); border:1px solid var(--border); border-radius:0.4rem; padding:0.45rem 0.7rem; font-size:0.76rem; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+
+.notes-layout { display:grid; grid-template-columns:190px 1fr; gap:1rem; min-height:420px; }
+.notes-sidebar { display:flex; flex-direction:column; gap:0.4rem; }
+.note-tab { background:var(--surface); border:1px solid var(--border); border-radius:0.5rem; padding:0.55rem 0.75rem; font-size:0.77rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:0.4rem; transition:background 0.12s; }
+.note-tab.active { border-color:var(--accent); background:rgba(240,224,64,0.06); }
+.nt-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nt-del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.62rem; padding:0; }
+.nt-del:hover { color:var(--urgent); }
+.notes-main { background:var(--surface); border:1px solid var(--border); border-radius:0.6rem; display:flex; flex-direction:column; }
+.note-editor-header { padding:0.75rem 1rem; border-bottom:1px solid var(--border); }
+.note-editor-header input { background:none; border:none; font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; color:var(--text); width:100%; padding:0; outline:none; }
+.note-editor-header input::placeholder { color:var(--muted); font-weight:400; }
+.note-textarea { flex:1; padding:1rem; background:none; border:none; color:var(--text); font-family:'DM Mono',monospace; font-size:0.78rem; line-height:1.7; resize:none; min-height:340px; outline:none; }
+.notes-saved { font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--muted); padding:0.4rem 1rem; border-top:1px solid var(--border); }
+
+.check-item { display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0; border-bottom:1px solid rgba(42,42,61,0.5); }
+.check-item:last-child { border-bottom:none; }
+.check-item label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; flex:1; font-size:0.82rem; }
+.check-item input[type=checkbox] { display:none; }
+.cbox { width:18px; height:18px; border:1.5px solid var(--border); border-radius:0.3rem; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.15s; font-size:0.6rem; }
+.check-item input:checked + .cbox { background:var(--accent); border-color:var(--accent); color:#000; }
+.prog-wrap { height:5px; background:var(--border); border-radius:3px; margin-top:0.75rem; }
+.prog-fill { height:100%; border-radius:3px; background:var(--accent); transition:width 0.4s ease; }
+
+.tip-card { background:linear-gradient(135deg,var(--surface),var(--surface2)); border:1px solid var(--border); border-radius:0.8rem; padding:1.25rem; font-size:0.85rem; line-height:1.7; min-height:90px; }
+
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; align-items:center; justify-content:center; padding:1rem; }
+.modal-bg.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.75rem; max-width:400px; width:100%; }
+.modal h3 { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; margin-bottom:1rem; }
+.modal-close { float:right; background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
+
+/* ── FILE UPLOAD ── */
+.file-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 0.6rem;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface2);
+  position: relative;
+}
+.file-drop-zone:hover, .file-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(240,224,64,0.04);
+}
+.file-drop-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.file-drop-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+.file-drop-text { font-family:'DM Mono',monospace; font-size: 0.65rem; color: var(--muted); }
+.file-drop-text strong { color: var(--accent); }
+.file-attached { display:flex; align-items:center; gap:0.5rem; background:rgba(68,221,136,0.08); border:1px solid rgba(68,221,136,0.25); border-radius:0.4rem; padding:0.45rem 0.7rem; font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--fine); margin-top:0.5rem; }
+.file-attached .fa-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.65rem; margin-left:auto; padding:0; }
+.file-attached .fa-remove:hover { color:var(--urgent); }
+.file-view-btn { background:none; border:none; color:var(--blue); font-family:'DM Mono',monospace; font-size:0.65rem; cursor:pointer; text-decoration:underline; padding:0; }
+.file-view-btn:hover { opacity:0.8; }
+
+/* ── PAST PAPERS LIBRARY ── */
+.lib-filter-row { display:flex; gap:0.4rem; margin-bottom:1.25rem; flex-wrap:wrap; align-items:center; }
+.lib-search { flex:1; min-width:180px; max-width:280px; }
+.lib-grid { display:grid; gap:0.5rem; }
+.lib-card { background:var(--surface); border:1px solid var(--border); border-radius:0.75rem; overflow:hidden; transition:background 0.15s; }
+.lib-card:hover { background:var(--surface2); }
+.lib-card-head { padding:0.75rem 1rem; display:flex; align-items:center; gap:0.7rem; cursor:pointer; }
+.lib-card-head::-webkit-details-marker { display:none; }
+.lib-subject-badge { font-family:'DM Mono',monospace; font-size:0.58rem; padding:0.2rem 0.5rem; border-radius:0.3rem; background:rgba(240,224,64,0.1); color:var(--accent); white-space:nowrap; flex-shrink:0; }
+.lib-card-title { font-weight:500; font-size:0.87rem; flex:1; line-height:1.3; }
+.lib-card-code { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--muted); }
+.lib-card-arrow { font-size:0.7rem; color:var(--muted); transition:transform 0.2s; flex-shrink:0; }
+details.lib-card[open] .lib-card-arrow { transform:rotate(90deg); }
+.lib-papers { padding:0 1rem 0.75rem; display:flex; flex-direction:column; gap:0.35rem; }
+.lib-year-group { margin-bottom:0.5rem; }
+.lib-year-label { font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.35rem; padding:0.2rem 0; border-bottom:1px solid var(--border); }
+.lib-paper-row { display:flex; align-items:center; gap:0.6rem; padding:0.35rem 0; }
+.lib-paper-name { font-size:0.78rem; flex:1; }
+.lib-link { display:inline-flex; align-items:center; gap:0.25rem; font-family:'DM Mono',monospace; font-size:0.62rem; padding:0.22rem 0.55rem; border-radius:0.3rem; text-decoration:none; transition:opacity 0.15s; white-space:nowrap; }
+.lib-link:hover { opacity:0.75; }
+.lib-link.qp { background:rgba(85,153,255,0.15); color:var(--blue); border:1px solid rgba(85,153,255,0.25); }
+.lib-link.ms { background:rgba(68,221,136,0.12); color:var(--fine); border:1px solid rgba(68,221,136,0.2); }
+.lib-link.hub { background:rgba(240,224,64,0.1); color:var(--accent); border:1px solid rgba(240,224,64,0.2); }
+.lib-board-tag { font-family:'DM Mono',monospace; font-size:0.55rem; padding:0.12rem 0.35rem; border-radius:0.2rem; background:var(--surface2); color:var(--muted); flex-shrink:0; }
+.lib-notice { background:linear-gradient(135deg,rgba(85,153,255,0.06),rgba(240,224,64,0.04)); border:1px solid var(--border); border-radius:0.6rem; padding:0.9rem 1rem; font-size:0.77rem; line-height:1.6; color:var(--muted); margin-bottom:1.25rem; }
+.lib-notice strong { color:var(--text); }
+
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+@media(max-width:700px) {
+  .days-grid { grid-template-columns:repeat(2,1fr); }
+  .notes-layout { grid-template-columns:1fr; }
+  .exam-card { grid-template-columns:70px 1fr; }
+  .eright { display:none; }
+  .form-grid { grid-template-columns:1fr; }
+  .page { padding:1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">STUDY<span>DASH</span></div>
+  <div class="header-right">
+    <span id="headerDate"></span><br>
+    <span id="liveTime" style="color:var(--accent)"></span>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="showPage('dashboard',this)">🏠 Dashboard</button>
+  <button class="nav-tab" onclick="showPage('exams',this)">📅 Exams</button>
+  <button class="nav-tab" onclick="showPage('routine',this)">📋 My Routine</button>
+  <button class="nav-tab" onclick="showPage('pastpapers',this)">📝 Past Papers</button>
+  <button class="nav-tab" onclick="showPage('library',this)">📚 Paper Library</button>
+  <button class="nav-tab" onclick="showPage('flashcards',this)">🃏 Flashcards</button>
+  <button class="nav-tab" onclick="showPage('notes',this)">📓 Notes</button>
+  <button class="nav-tab" onclick="showPage('tools',this)">🛠️ Tools</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="hero">
+    <div class="hero-label">⚡ Next exam up</div>
+    <div class="hero-subject" id="heroSubject">Loading…</div>
+    <div class="hero-meta" id="heroMeta"></div>
+    <div class="countdown-grid">
+      <div class="count-block"><span class="count-num" id="cdDays">--</span><span class="count-label">Days</span></div>
+      <div class="count-block"><span class="count-num" id="cdHours">--</span><span class="count-label">Hours</span></div>
+      <div class="count-block"><span class="count-num" id="cdMins">--</span><span class="count-label">Mins</span></div>
+      <div class="count-block"><span class="count-num" id="cdSecs">--</span><span class="count-label">Secs</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;margin-bottom:2rem;">
+    <div class="tool-card">
+      <div class="tool-icon">📊</div>
+      <div class="tool-title">Quick Stats</div>
+      <div id="dashStats" style="font-size:0.8rem;line-height:2;font-family:'DM Mono',monospace;color:var(--muted);"></div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-icon">☀️</div>
+      <div class="tool-title">Today's Tasks</div>
+      <div id="dashToday" style="font-size:0.78rem;line-height:1.8;"></div>
+      <button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.68rem;" onclick="showPage('routine',document.querySelectorAll('.nav-tab')[2])">Go to Routine →</button>
+    </div>
+    <div class="tool-card">
+      <div class="tool-icon">📈</div>
+      <div class="tool-title">Past Paper Progress</div>
+      <div id="dashPP" style="font-size:0.8rem;line-height:2;font-family:'DM Mono',monospace;color:var(--muted);"></div>
+      <button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.68rem;" onclick="showPage('pastpapers',document.querySelectorAll('.nav-tab')[3])">View Logs →</button>
+    </div>
+    <div class="tool-card">
+      <div class="tool-icon">💡</div>
+      <div class="tool-title">Study Tip</div>
+      <div id="dashTip" class="tip-card" style="margin-top:0.5rem;font-size:0.78rem;padding:0.9rem;"></div>
+      <button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.68rem;" onclick="cycleTip()">Next tip →</button>
+    </div>
+  </div>
+
+  <div class="sec">⚡ Upcoming Exams</div>
+  <div class="exam-grid" id="dashExamGrid"></div>
+</div>
+
+<!-- EXAMS -->
+<div class="page" id="page-exams">
+  <div class="sec">📅 Your Exam Schedule</div>
+  <div class="filter-row">
+    <button class="fbtn active" onclick="filterExams('all',this)">All</button>
+    <button class="fbtn" onclick="filterExams('upcoming',this)">Upcoming</button>
+    <button class="fbtn" onclick="filterExams('past',this)">Past</button>
+  </div>
+  <div class="exam-grid" id="examGrid"></div>
+</div>
+
+<!-- ROUTINE -->
+<div class="page" id="page-routine">
+  <div class="sec">📋 Weekly Routine Builder</div>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.25rem;">Click <strong style="color:var(--text)">+ Add</strong> on any day column, or use the form below.</p>
+  <div class="days-grid" id="routineGrid"></div>
+  <div class="sec">Add a Block</div>
+  <div class="tool-card" style="max-width:520px;">
+    <div class="form-grid">
+      <div class="form-row"><label>Day</label>
+        <select id="rtDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select>
+      </div>
+      <div class="form-row"><label>Time</label><input type="text" id="rtTime" placeholder="e.g. 9:00am"></div>
+    </div>
+    <div class="form-row"><label>Subject / Activity</label><input type="text" id="rtSubject" placeholder="e.g. Biology — past papers"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Duration</label><input type="text" id="rtDur" placeholder="e.g. 1hr 30min"></div>
+      <div class="form-row"><label>Colour</label>
+        <select id="rtColor">
+          <option value="var(--accent)">Yellow</option>
+          <option value="var(--fine)">Green</option>
+          <option value="var(--blue)">Blue</option>
+          <option value="var(--soon)">Orange</option>
+          <option value="var(--urgent)">Red</option>
+          <option value="#cc88ff">Purple</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="addRoutineBlock()">+ Add Block</button>
+  </div>
+</div>
+
+<!-- PAST PAPERS LOG -->
+<div class="page" id="page-pastpapers">
+  <div class="sec">📝 Past Paper Log</div>
+  <div class="pp-stats" id="ppStats"></div>
+
+  <div class="tool-card" style="margin-bottom:1.5rem;">
+    <div class="tool-title" style="margin-bottom:0.9rem;">Log a Past Paper</div>
+    <div class="form-grid">
+      <div class="form-row"><label>Subject</label>
+        <select id="ppSubject">
+          <option>First Language Thai</option><option>First Language English</option>
+          <option>Business Studies</option><option>Biology</option>
+          <option>Design & Technology</option><option>Mathematics</option>
+          <option>Chemistry</option><option>Computer Science</option><option>Physics</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Paper / Year</label><input type="text" id="ppPaper" placeholder="e.g. 2023 Paper 1"></div>
+      <div class="form-row"><label>Score (%)</label><input type="number" id="ppScore" min="0" max="100" placeholder="e.g. 78"></div>
+      <div class="form-row"><label>Date Done</label><input type="date" id="ppDate"></div>
+    </div>
+    <div class="form-row"><label>Notes / Areas to Improve</label><textarea id="ppNotes" placeholder="e.g. Struggled with Q3 — review osmosis"></textarea></div>
+
+    <!-- FILE UPLOAD -->
+    <div class="form-row">
+      <label>Attach Your Paper (PDF, image, or any file)</label>
+      <div class="file-drop-zone" id="fileDropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)">
+        <input type="file" id="ppFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+        <div class="file-drop-icon">📎</div>
+        <div class="file-drop-text">Drop your paper here or <strong>click to browse</strong><br>PDF, image, Word, or text — up to 50MB</div>
+      </div>
+      <div id="fileAttachedPreview" style="display:none;"></div>
+    </div>
+
+    <button class="btn" onclick="addPP()">+ Log Paper</button>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="pp-table" id="ppTable">
+      <thead><tr><th>Date</th><th>Subject</th><th>Paper</th><th>Score</th><th>File</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="ppBody"></tbody>
+    </table>
+    <div id="ppEmpty" style="text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.75rem;">No papers logged yet. Add your first one above!</div>
+  </div>
+</div>
+
+<!-- PAPER LIBRARY (NEW) -->
+<div class="page" id="page-library">
+  <div class="sec">📚 Past Paper Library</div>
+
+  <div class="lib-notice">
+    <strong>How this works:</strong> Official Edexcel and Cambridge past papers require a registered centre login to download directly. These links take you to the best <strong>free aggregator sites</strong> (Physics & Maths Tutor, PastPapersZ, SaveMyExams) where your papers are freely available. Links are organised by your exact subject and paper code.
+  </div>
+
+  <div class="lib-filter-row">
+    <input type="text" class="lib-search" id="libSearch" placeholder="Search subject…" oninput="filterLibrary()" style="max-width:220px;">
+    <button class="fbtn active" onclick="filterLibBoard('all',this)">All Boards</button>
+    <button class="fbtn" onclick="filterLibBoard('edexcel',this)">Edexcel</button>
+    <button class="fbtn" onclick="filterLibBoard('cambridge',this)">Cambridge</button>
+    <button class="fbtn" onclick="filterLibBoard('oxfordaqa',this)">OxfordAQA</button>
+  </div>
+
+  <div class="lib-grid" id="libGrid"></div>
+</div>
+
+<!-- FLASHCARDS -->
+<div class="page" id="page-flashcards">
+  <div class="sec">🃏 Flashcards</div>
+  <div style="max-width:500px;margin:0 auto;">
+    <div class="fc-card" id="fcCard" onclick="flipCard()">
+      <div class="fc-front" id="fcFront">No cards yet — add some below!</div>
+      <div class="fc-back" id="fcBack"></div>
+      <div class="fc-hint">Click to flip</div>
+    </div>
+    <div class="fc-nav">
+      <button class="btn btn-ghost" onclick="prevCard()">← Prev</button>
+      <span id="fcCounter">0 / 0</span>
+      <button class="btn btn-ghost" onclick="nextCard()">Next →</button>
+    </div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-ghost" style="font-size:0.68rem;" onclick="shuffleCards()">🔀 Shuffle</button>
+      <button class="btn" style="font-size:0.68rem;background:var(--fine);color:#000;" onclick="markKnown()">✓ Know it</button>
+      <button class="btn btn-danger" style="font-size:0.68rem;" onclick="markUnknown()">✗ Review again</button>
+    </div>
+    <div class="tool-card" style="margin-top:1.5rem;">
+      <div class="tool-title" style="margin-bottom:0.75rem;">Add Flashcard</div>
+      <div class="form-row"><label>Subject</label>
+        <select id="fcSubject">
+          <option>First Language Thai</option><option>First Language English</option>
+          <option>Business Studies</option><option>Biology</option>
+          <option>Design & Technology</option><option>Mathematics</option>
+          <option>Chemistry</option><option>Computer Science</option><option>Physics</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Question / Term</label><input type="text" id="fcQ" placeholder="e.g. What is osmosis?"></div>
+      <div class="form-row"><label>Answer / Definition</label><textarea id="fcA" placeholder="e.g. Movement of water molecules from high to low water potential…" rows="3"></textarea></div>
+      <button class="btn" onclick="addCard()">+ Add Card</button>
+      <div class="sec" style="margin-top:1.25rem;">All Cards</div>
+      <div class="fc-list" id="fcList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div class="page" id="page-notes">
+  <div class="sec" style="margin-bottom:0.75rem;">📓 Notes</div>
+  <div style="margin-bottom:1rem;"><button class="btn" onclick="addNote()">+ New Note</button></div>
+  <div class="notes-layout">
+    <div class="notes-sidebar" id="notesSidebar"></div>
+    <div class="notes-main">
+      <div class="note-editor-header">
+        <input type="text" id="noteTitleInput" placeholder="Note title…" oninput="saveCurrentNote()">
+      </div>
+      <textarea class="note-textarea" id="noteBodyInput" placeholder="Start writing…" oninput="saveCurrentNote()"></textarea>
+      <div class="notes-saved" id="notesSaved"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<div class="page" id="page-tools">
+  <div class="sec">🛠️ Revision Tools</div>
+  <div class="tools-grid">
+
+    <div class="tool-card">
+      <div class="tool-icon">🍅</div>
+      <div class="tool-title">Pomodoro Timer</div>
+      <div class="tool-desc">Focused sessions with auto breaks.</div>
+      <div class="pomo-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="ring-fg" id="pomoRing" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"/>
+        </svg>
+        <div class="pomo-center">
+          <div class="pomo-time-txt" id="pomoTime">25:00</div>
+          <div class="pomo-lbl" id="pomoLbl">Focus</div>
+        </div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);text-align:center;margin-bottom:0.6rem;" id="pomoSessions">Session 1 of 4</div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button class="btn" id="pomoBtn" onclick="togglePomo()">▶ Start</button>
+        <button class="btn btn-ghost" onclick="resetPomo()">↺ Reset</button>
+        <button class="btn btn-ghost" onclick="setPomoMode('break')">☕ Break</button>
+        <button class="btn btn-ghost" onclick="setPomoMode('long')">🌙 Long</button>
+      </div>
+      <div style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <label style="margin:0;white-space:nowrap;font-size:0.65rem;">Work min:</label>
+        <input type="number" id="pomoWorkMin" value="25" min="1" max="90" style="width:55px;" oninput="if(!pomoRunning)resetPomo()">
+        <label style="margin:0;white-space:nowrap;font-size:0.65rem;">Break min:</label>
+        <input type="number" id="pomoBreakMin" value="5" min="1" max="30" style="width:55px;">
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">✅</div>
+      <div class="tool-title">Subject Checklist</div>
+      <div class="tool-desc">Tick off subjects as you cover them this week.</div>
+      <div id="checklistBody"></div>
+      <div class="prog-wrap"><div class="prog-fill" id="checkFill" style="width:0%"></div></div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:0.4rem;" id="checkPct"></div>
+      <button class="btn btn-ghost" style="margin-top:0.75rem;font-size:0.68rem;" onclick="resetChecks()">Reset All</button>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">💡</div>
+      <div class="tool-title">Study Tips</div>
+      <div class="tool-desc">Evidence-based revision strategies.</div>
+      <div class="tip-card" id="tipCard"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="prevTip()">← Prev</button>
+        <button class="btn btn-ghost" onclick="cycleTip()">Next →</button>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">🧮</div>
+      <div class="tool-title">Grade Calculator</div>
+      <div class="tool-desc">See what score you need to reach a target grade.</div>
+      <div class="form-row"><label>Your current score (%)</label><input type="number" id="gcCurrent" placeholder="e.g. 65" min="0" max="100" oninput="calcGrade()"></div>
+      <div class="form-row"><label>Target grade</label>
+        <select id="gcTarget" onchange="calcGrade()">
+          <option value="90">A* (90%+)</option><option value="80">A (80%+)</option>
+          <option value="70">B (70%+)</option><option value="60">C (60%+)</option><option value="50">D (50%+)</option>
+        </select>
+      </div>
+      <div id="gcResult" style="font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.6rem;background:var(--surface2);border-radius:0.4rem;color:var(--muted);">Enter your score above.</div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">🗓️</div>
+      <div class="tool-title">Days Until Each Exam</div>
+      <div class="tool-desc">Quick countdown per subject.</div>
+      <div id="daysUntil" style="display:flex;flex-direction:column;gap:0.3rem;font-size:0.78rem;margin-top:0.25rem;"></div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">🎲</div>
+      <div class="tool-title">Random Exam Question</div>
+      <div class="tool-desc">Practise answering exam-style questions.</div>
+      <div id="randomQ" style="background:var(--surface2);border-radius:0.5rem;padding:0.75rem;font-size:0.82rem;line-height:1.6;min-height:70px;margin-bottom:0.75rem;"></div>
+      <div id="randomA" style="display:none;background:rgba(68,221,136,0.07);border:1px solid rgba(68,221,136,0.2);border-radius:0.5rem;padding:0.75rem;font-size:0.78rem;line-height:1.6;margin-bottom:0.75rem;color:var(--fine);"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="newRandomQ()">🎲 New Question</button>
+        <button class="btn btn-ghost" id="revealBtn" onclick="revealAnswer()" style="display:none;">Show Answer</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Add Task -->
+<div class="modal-bg" id="taskModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeTaskModal()">✕</button>
+    <h3>Add Task</h3>
+    <input type="hidden" id="taskDay">
+    <div class="form-row"><label>Time</label><input type="text" id="taskTime" placeholder="e.g. 9:00am"></div>
+    <div class="form-row"><label>Subject / Activity</label><input type="text" id="taskSubject" placeholder="e.g. Biology revision"></div>
+    <div class="form-row"><label>Duration</label><input type="text" id="taskDur" placeholder="e.g. 1hr 30min"></div>
+    <div class="form-row"><label>Colour</label>
+      <select id="taskColor">
+        <option value="var(--accent)">Yellow</option>
+        <option value="var(--fine)">Green</option>
+        <option value="var(--blue)">Blue</option>
+        <option value="var(--soon)">Orange</option>
+        <option value="var(--urgent)">Red</option>
+        <option value="#cc88ff">Purple</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="saveTask()">Add Task</button>
+      <button class="btn btn-ghost" onclick="closeTaskModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: View File -->
+<div class="modal-bg" id="fileViewModal">
+  <div class="modal" style="max-width:800px;max-height:90vh;overflow:auto;">
+    <button class="modal-close" onclick="document.getElementById('fileViewModal').classList.remove('open')">✕</button>
+    <h3 id="fileViewTitle" style="margin-bottom:1rem;">Viewing File</h3>
+    <div id="fileViewContent"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const exams = [
+  { date: new Date(2026,3,30), day:'Thu', subject:'First Language Thai — Reading & Directed Writing', code:'0518/01', board:'Cambridge IGCSE', time:'3:15pm', dur:'2hr' },
+  { date: new Date(2026,4,6),  day:'Wed', subject:'First Language English (Oral Endorsement) — Reading', code:'0500/12', board:'Cambridge IGCSE', time:'11:30am', dur:'2hr' },
+  { date: new Date(2026,4,11), day:'Mon', subject:'Business Studies — Short Answer & Data Response', code:'0450/12', board:'Cambridge IGCSE', time:'11:30am', dur:'1hr 30min' },
+  { date: new Date(2026,4,12), day:'Tue', subject:'Biology Paper 1BR', code:'4BI1/1BR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr' },
+  { date: new Date(2026,4,12), day:'Tue', subject:'Design and Technology — Product Design', code:'0445/12', board:'Cambridge IGCSE', time:'3:15pm', dur:'1hr 15min' },
+  { date: new Date(2026,4,14), day:'Thu', subject:'Mathematics A Paper 1HR — Higher Tier', code:'4MA1/1HR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr' },
+  { date: new Date(2026,4,14), day:'Thu', subject:'First Language Thai — Composition', code:'0518/02', board:'Cambridge IGCSE', time:'3:15pm', dur:'2hr' },
+  { date: new Date(2026,4,15), day:'Fri', subject:'First Language English — Directed Writing & Composition', code:'0500/22', board:'Cambridge IGCSE', time:'10:30am', dur:'2hr' },
+  { date: new Date(2026,4,15), day:'Fri', subject:'Computer Science 1 — Programming Practical', code:'9210/1', board:'OxfordAQA IGCSE', time:'2:30pm', dur:'2hr' },
+  { date: new Date(2026,4,18), day:'Mon', subject:'Business Studies — Case Study', code:'0450/22', board:'Cambridge IGCSE', time:'11:30am', dur:'1hr 30min' },
+  { date: new Date(2026,4,18), day:'Mon', subject:'Chemistry Paper 1CR', code:'4CH1/1CR', board:'Edexcel IGCSE', time:'2:30pm', dur:'2hr' },
+  { date: new Date(2026,4,19), day:'Tue', subject:'Computer Science 2 — Concepts & Principles', code:'9210/2', board:'OxfordAQA IGCSE', time:'2:15pm', dur:'2hr' },
+  { date: new Date(2026,5,2),  day:'Tue', subject:'Physics Paper 1PR', code:'4PH1/1PR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr' },
+  { date: new Date(2026,5,3),  day:'Wed', subject:'Mathematics A Paper 2HR — Higher Tier', code:'4MA1/2HR', board:'Edexcel IGCSE', time:'11:30am', dur:'2hr' },
+  { date: new Date(2026,5,8),  day:'Mon', subject:'Biology Paper 2BR', code:'4BI1/2BR', board:'Edexcel IGCSE', time:'11:45am', dur:'1hr 15min' },
+  { date: new Date(2026,5,12), day:'Fri', subject:'Chemistry Paper 2CR', code:'4CH1/2CR', board:'Edexcel IGCSE', time:'11:45am', dur:'1hr 15min' },
+  { date: new Date(2026,5,15), day:'Mon', subject:'Physics Paper 2PR', code:'4PH1/2PR', board:'Edexcel IGCSE', time:'11:45am', dur:'1hr 15min' },
+];
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const checkSubjects = ['First Language Thai','First Language English','Business Studies','Biology','Design & Technology','Mathematics','Chemistry','Computer Science','Physics'];
+
+// ── PAPER LIBRARY DATA ─────────────────────────────────────────────
+const libraryData = [
+  {
+    id: 'bio',
+    subject: 'Biology',
+    board: 'edexcel',
+    boardLabel: 'Edexcel IGCSE',
+    code: '4BI1',
+    years: [
+      { year: '2024', papers: [
+        { name: 'Paper 1BR (R-version)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-1/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-1/', type:'ms' },
+        ]},
+        { name: 'Paper 2BR (R-version)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-2/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-2/', type:'ms' },
+        ]},
+      ]},
+      { year: '2023', papers: [
+        { name: 'Paper 1BR', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-1/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-1/', type:'ms' },
+        ]},
+        { name: 'Paper 2BR', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-2/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-2/', type:'ms' },
+        ]},
+      ]},
+      { year: 'All Years Hub', papers: [
+        { name: 'Full collection (PMT)', links: [{ label: 'Open Hub →', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-biology/edexcel-igcse-paper-1/', type:'hub' }] },
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://www.pastpapersz.com/edexcel/igcse-biology/', type:'hub' }] },
+        { name: 'SaveMyExams collection', links: [{ label: 'Open Hub →', url: 'https://www.savemyexams.com/igcse/biology/edexcel/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'chem',
+    subject: 'Chemistry',
+    board: 'edexcel',
+    boardLabel: 'Edexcel IGCSE',
+    code: '4CH1',
+    years: [
+      { year: '2024', papers: [
+        { name: 'Paper 1CR (R-version)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-chemistry/edexcel-igcse-paper-1/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-chemistry/edexcel-igcse-paper-1/', type:'ms' },
+        ]},
+        { name: 'Paper 2CR (R-version)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-chemistry/edexcel-igcse-paper-2/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-chemistry/edexcel-igcse-paper-2/', type:'ms' },
+        ]},
+      ]},
+      { year: 'All Years Hub', papers: [
+        { name: 'Full collection (PMT)', links: [{ label: 'Open Hub →', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-chemistry/edexcel-igcse-paper-1/', type:'hub' }] },
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://www.pastpapersz.com/edexcel/igcse-chemistry/', type:'hub' }] },
+        { name: 'SaveMyExams collection', links: [{ label: 'Open Hub →', url: 'https://www.savemyexams.com/igcse/chemistry/edexcel/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'phys',
+    subject: 'Physics',
+    board: 'edexcel',
+    boardLabel: 'Edexcel IGCSE',
+    code: '4PH1',
+    years: [
+      { year: '2024', papers: [
+        { name: 'Paper 1PR (R-version)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-physics/edexcel-igcse-paper-1/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-physics/edexcel-igcse-paper-1/', type:'ms' },
+        ]},
+        { name: 'Paper 2PR (R-version)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-physics/edexcel-igcse-paper-2/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-physics/edexcel-igcse-paper-2/', type:'ms' },
+        ]},
+      ]},
+      { year: 'All Years Hub', papers: [
+        { name: 'Full collection (PMT)', links: [{ label: 'Open Hub →', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-physics/edexcel-igcse-paper-1/', type:'hub' }] },
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://www.pastpapersz.com/edexcel/igcse-physics/', type:'hub' }] },
+        { name: 'SaveMyExams collection', links: [{ label: 'Open Hub →', url: 'https://www.savemyexams.com/igcse/physics/edexcel/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'maths',
+    subject: 'Mathematics A',
+    board: 'edexcel',
+    boardLabel: 'Edexcel IGCSE',
+    code: '4MA1',
+    years: [
+      { year: '2024', papers: [
+        { name: 'Paper 1HR (Higher Tier)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-maths/edexcel-igcse-higher/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-maths/edexcel-igcse-higher/', type:'ms' },
+        ]},
+        { name: 'Paper 2HR (Higher Tier)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-maths/edexcel-igcse-higher/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-maths/edexcel-igcse-higher/', type:'ms' },
+        ]},
+      ]},
+      { year: 'All Years Hub', papers: [
+        { name: 'Full collection (PMT)', links: [{ label: 'Open Hub →', url: 'https://www.physicsandmathstutor.com/past-papers/gcse-maths/edexcel-igcse-higher/', type:'hub' }] },
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://www.pastpapersz.com/edexcel/igcse-maths/', type:'hub' }] },
+        { name: 'SaveMyExams collection', links: [{ label: 'Open Hub →', url: 'https://www.savemyexams.com/igcse/maths/edexcel/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'eng',
+    subject: 'First Language English',
+    board: 'cambridge',
+    boardLabel: 'Cambridge IGCSE',
+    code: '0500',
+    years: [
+      { year: '2024', papers: [
+        { name: 'Paper 1 — Reading (0500/12)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-english-language/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-english-language/', type:'ms' },
+        ]},
+        { name: 'Paper 2 — Directed Writing & Composition (0500/22)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-english-language/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-english-language/', type:'ms' },
+        ]},
+      ]},
+      { year: 'All Years Hub', papers: [
+        { name: 'PMT collection', links: [{ label: 'Open Hub →', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-english-language/', type:'hub' }] },
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://pastpapersz.com/cambridge/igcse-first-language-english-0500/', type:'hub' }] },
+        { name: 'Cambridge official page', links: [{ label: 'Open Hub →', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-english-first-language-0500/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'thai',
+    subject: 'First Language Thai',
+    board: 'cambridge',
+    boardLabel: 'Cambridge IGCSE',
+    code: '0518',
+    years: [
+      { year: 'All Years Hub', papers: [
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://pastpapersz.com/cambridge/igcse/', type:'hub' }] },
+        { name: 'Cambridge official page', links: [{ label: 'Open Hub →', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-thai-first-language-0518/past-papers/', type:'hub' }] },
+        { name: 'DynamicPapers (CIE)', links: [{ label: 'Open Hub →', url: 'https://dynamicpapers.com/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'biz',
+    subject: 'Business Studies',
+    board: 'cambridge',
+    boardLabel: 'Cambridge IGCSE',
+    code: '0450',
+    years: [
+      { year: '2024', papers: [
+        { name: 'Paper 1 — Short Answer (0450/12)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-business-studies/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-business-studies/', type:'ms' },
+        ]},
+        { name: 'Paper 2 — Case Study (0450/22)', links: [
+          { label: 'QP', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-business-studies/', type:'qp' },
+          { label: 'MS', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-business-studies/', type:'ms' },
+        ]},
+      ]},
+      { year: 'All Years Hub', papers: [
+        { name: 'PMT collection', links: [{ label: 'Open Hub →', url: 'https://www.physicsandmathstutor.com/past-papers/igcse-business-studies/', type:'hub' }] },
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://pastpapersz.com/cambridge/igcse-business-studies-0450/', type:'hub' }] },
+        { name: 'Cambridge official page', links: [{ label: 'Open Hub →', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-business-studies-0450/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'dt',
+    subject: 'Design & Technology',
+    board: 'cambridge',
+    boardLabel: 'Cambridge IGCSE',
+    code: '0445',
+    years: [
+      { year: 'All Years Hub', papers: [
+        { name: 'PastPapersZ collection', links: [{ label: 'Open Hub →', url: 'https://pastpapersz.com/cambridge/igcse/', type:'hub' }] },
+        { name: 'Cambridge official page', links: [{ label: 'Open Hub →', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-design-and-technology-0445/past-papers/', type:'hub' }] },
+        { name: 'SaveMyExams collection', links: [{ label: 'Open Hub →', url: 'https://www.savemyexams.com/igcse/design-technology/cie/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+  {
+    id: 'cs',
+    subject: 'Computer Science',
+    board: 'oxfordaqa',
+    boardLabel: 'OxfordAQA IGCSE',
+    code: '9210',
+    years: [
+      { year: 'All Years Hub', papers: [
+        { name: 'OxfordAQA official past papers', links: [{ label: 'Open Hub →', url: 'https://www.oxfordaqaexams.org.uk/international-gcse/subjects/computer-science/past-papers/', type:'hub' }] },
+        { name: 'Paper 1 — Programming Practical (9210/1)', links: [{ label: 'Open Hub →', url: 'https://www.oxfordaqaexams.org.uk/international-gcse/subjects/computer-science/past-papers/', type:'hub' }] },
+        { name: 'Paper 2 — Concepts & Principles (9210/2)', links: [{ label: 'Open Hub →', url: 'https://www.oxfordaqaexams.org.uk/international-gcse/subjects/computer-science/past-papers/', type:'hub' }] },
+      ]},
+    ]
+  },
+];
+
+let libBoardFilter = 'all';
+
+function renderLibrary() {
+  const search = (document.getElementById('libSearch')?.value || '').toLowerCase();
+  const grid = document.getElementById('libGrid');
+  grid.innerHTML = '';
+  libraryData.forEach(subj => {
+    if (libBoardFilter !== 'all' && subj.board !== libBoardFilter) return;
+    if (search && !subj.subject.toLowerCase().includes(search) && !subj.code.toLowerCase().includes(search)) return;
+    const det = document.createElement('details');
+    det.className = 'lib-card';
+    let papersHTML = '';
+    subj.years.forEach(yr => {
+      papersHTML += `<div class="lib-year-group"><div class="lib-year-label">${yr.year}</div>`;
+      yr.papers.forEach(p => {
+        const links = p.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" class="lib-link ${l.type}">${l.label}</a>`).join('');
+        papersHTML += `<div class="lib-paper-row"><span class="lib-paper-name">${p.name}</span>${links}</div>`;
+      });
+      papersHTML += `</div>`;
+    });
+    det.innerHTML = `
+      <summary class="lib-card-head">
+        <span class="lib-subject-badge">${subj.boardLabel}</span>
+        <span class="lib-card-title">${subj.subject}</span>
+        <span class="lib-card-code">${subj.code}</span>
+        <span class="lib-card-arrow">▶</span>
+      </summary>
+      <div class="lib-papers">${papersHTML}</div>
+    `;
+    grid.appendChild(det);
+  });
+}
+
+function filterLibrary() { renderLibrary(); }
+function filterLibBoard(b, btn) {
+  libBoardFilter = b;
+  document.querySelectorAll('.lib-filter-row .fbtn').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+  renderLibrary();
+}
+
+// ── FILE UPLOAD ────────────────────────────────────────────────────
+let pendingFile = null; // { name, dataUrl, type, size }
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('fileDropZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('fileDropZone').classList.remove('drag-over');
+}
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('fileDropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+function processFile(file) {
+  if (file.size > 52428800) { alert('File too large — max 50MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    pendingFile = { name: file.name, dataUrl: e.target.result, type: file.type, size: file.size };
+    showFilePreview();
+  };
+  reader.readAsDataURL(file);
+}
+function showFilePreview() {
+  const prev = document.getElementById('fileAttachedPreview');
+  prev.style.display = 'block';
+  prev.innerHTML = `<div class="file-attached">📎 <span>${pendingFile.name}</span> <span style="color:var(--muted);font-size:0.6rem;">(${(pendingFile.size/1024).toFixed(0)}KB)</span><button class="fa-remove" onclick="clearPendingFile()">✕</button></div>`;
+}
+function clearPendingFile() {
+  pendingFile = null;
+  document.getElementById('fileAttachedPreview').style.display = 'none';
+  document.getElementById('ppFile').value = '';
+}
+
+function viewAttachedFile(ppId) {
+  const pps = ld('pastpapers', []);
+  const pp = pps.find(p => p.id === ppId);
+  if (!pp || !pp.file) return;
+  const modal = document.getElementById('fileViewModal');
+  document.getElementById('fileViewTitle').textContent = pp.file.name;
+  const content = document.getElementById('fileViewContent');
+  if (pp.file.type && pp.file.type.startsWith('image/')) {
+    content.innerHTML = `<img src="${pp.file.dataUrl}" style="max-width:100%;border-radius:0.5rem;">`;
+  } else if (pp.file.type === 'application/pdf') {
+    content.innerHTML = `<iframe src="${pp.file.dataUrl}" style="width:100%;height:70vh;border:none;border-radius:0.5rem;"></iframe>`;
+  } else {
+    content.innerHTML = `<div style="padding:1rem;text-align:center;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.8rem;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">📄</div>
+      <div>${pp.file.name}</div>
+      <div style="margin-top:1rem;"><a href="${pp.file.dataUrl}" download="${pp.file.name}" class="btn">⬇ Download File</a></div>
+    </div>`;
+  }
+  modal.classList.add('open');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────
+function daysDiff(d){ const n=new Date(); n.setHours(0,0,0,0); const t=new Date(d); t.setHours(0,0,0,0); return Math.round((t-n)/86400000); }
+function urgClass(d){ if(d<0) return 'past'; if(d<=3) return 'urgent'; if(d<=10) return 'soon'; return 'fine'; }
+function fmtDate(d){ return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function sv(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+function ld(k,def){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch{ return def; } }
+
+// ── NAV ───────────────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='dashboard') refreshDash();
+  if(id==='routine') renderRoutine();
+  if(id==='pastpapers') renderPP();
+  if(id==='library') renderLibrary();
+  if(id==='flashcards') renderFC();
+  if(id==='notes') renderNotes();
+  if(id==='tools'){ renderChecklist(); renderDaysUntil(); newRandomQ(); }
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────
+function updateClock(){
+  const n=new Date();
+  document.getElementById('liveTime').textContent=n.toLocaleTimeString('en-GB');
+  document.getElementById('headerDate').textContent=n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+}
+
+// ── HERO ──────────────────────────────────────────────────────────
+function updateHero(){
+  const now=new Date();
+  const next=exams.find(e=>e.date>=new Date(now.toDateString()));
+  if(!next) return;
+  document.getElementById('heroSubject').textContent=next.subject;
+  document.getElementById('heroMeta').textContent=`${next.day}, ${fmtDate(next.date)} · ${next.time} · ${next.dur} · ${next.board}`;
+  const t=new Date(next.date);
+  const tp=next.time.match(/(\d+):(\d+)(am|pm)/i);
+  if(tp){ let h=parseInt(tp[1]); if(tp[3].toLowerCase()==='pm'&&h!==12) h+=12; t.setHours(h,parseInt(tp[2]),0,0); }
+  const diff=t-now; if(diff<=0){ return; }
+  const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  ['cdDays','cdHours','cdMins','cdSecs'].forEach((id,i)=>document.getElementById(id).textContent=String([d,h,m,s][i]).padStart(2,'0'));
+}
+
+// ── EXAM GRID ─────────────────────────────────────────────────────
+function renderExamGrid(cid, filter='all', limit=null){
+  const grid=document.getElementById(cid); grid.innerHTML=''; let shown=0;
+  exams.forEach(ex=>{
+    const days=daysDiff(ex.date);
+    if(filter==='upcoming'&&days<0) return;
+    if(filter==='past'&&days>=0) return;
+    if(limit&&shown>=limit) return;
+    shown++;
+    const urg=urgClass(days);
+    const dl=days<0?`${Math.abs(days)}d ago`:days===0?'TODAY!':`in ${days}d`;
+    const d=document.createElement('div');
+    d.className=`exam-card ${urg}`; d.style.animationDelay=`${shown*0.04}s`;
+    d.innerHTML=`<div class="eday"><div class="dl">${ex.day}</div><div class="dn">${fmtDate(ex.date)}</div></div><div><div class="esubj">${ex.subject}</div><div class="esub2">${ex.board} · ${ex.code}</div></div><div class="eright"><div class="etime">${ex.time}</div><div class="edur">${ex.dur}</div><div class="badge ${urg}">${dl}</div></div>`;
+    grid.appendChild(d);
+  });
+  if(!shown) grid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:0.75rem;">No exams here.</div>';
+}
+function filterExams(f,btn){ document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderExamGrid('examGrid',f); }
+
+// ── DASHBOARD ─────────────────────────────────────────────────────
+function refreshDash(){
+  updateHero();
+  renderExamGrid('dashExamGrid','upcoming',5);
+  const upcoming=exams.filter(e=>daysDiff(e.date)>=0);
+  const next=upcoming[0];
+  const pps=ld('pastpapers',[]);
+  const avg=pps.length?Math.round(pps.reduce((s,p)=>s+parseFloat(p.score||0),0)/pps.length):0;
+  document.getElementById('dashStats').innerHTML=`Exams left: <span style="color:var(--text)">${upcoming.length}</span><br>Next: <span style="color:var(--accent)">${next?fmtDate(next.date)+' — '+next.subject.split('—')[0].trim():'All done!'}</span><br>Papers logged: <span style="color:var(--text)">${pps.length}</span><br>Avg score: <span style="color:${avg>=70?'var(--fine)':avg>=50?'var(--soon)':'var(--urgent)'}">${pps.length?avg+'%':'—'}</span>`;
+  const todayIdx=(new Date().getDay()+6)%7;
+  const routine=ld('routine',{});
+  const tt=routine[DAYS[todayIdx]]||[];
+  const todayEl=document.getElementById('dashToday');
+  todayEl.innerHTML=tt.length?tt.map(t=>`<div style="font-size:0.78rem;padding:0.28rem 0;border-bottom:1px solid var(--border);display:flex;gap:0.5rem;"><span style="color:var(--accent);font-family:'DM Mono',monospace;font-size:0.62rem;flex-shrink:0;">${t.time||'—'}</span><span>${t.subject}</span></div>`).join(''):'<span style="color:var(--muted);font-size:0.77rem;font-family:\'DM Mono\',monospace;">No tasks today. Add some in Routine!</span>';
+  const bySubj={};
+  pps.forEach(p=>{ if(!bySubj[p.subject]) bySubj[p.subject]={c:0,t:0}; bySubj[p.subject].c++; bySubj[p.subject].t+=parseFloat(p.score||0); });
+  document.getElementById('dashPP').innerHTML=Object.keys(bySubj).length?Object.entries(bySubj).map(([s,v])=>`${s.split(' ').slice(-1)[0]}: <span style="color:var(--text)">${Math.round(v.t/v.c)}% (${v.c})</span>`).join('<br>'):'No papers logged yet.';
+  showTipAt(tipIdx);
+}
+
+// ── ROUTINE ───────────────────────────────────────────────────────
+function renderRoutine(){
+  const routine=ld('routine',{}), todayName=DAYS[(new Date().getDay()+6)%7];
+  const grid=document.getElementById('routineGrid'); grid.innerHTML='';
+  DAYS.forEach(day=>{
+    const col=document.createElement('div');
+    col.className='day-col'+(day===todayName?' today':'');
+    const tasks=routine[day]||[];
+    col.innerHTML=`<div class="day-col-head">${day.slice(0,3)}</div><div class="day-tasks" id="dt-${day}">${tasks.map((t,i)=>`<div class="task-chip" style="border-left-color:${t.color||'var(--accent)'}"><div><div class="tc-text">${t.subject}</div><div class="tc-time">${t.time||''}${t.dur?' · '+t.dur:''}</div></div><button class="tc-del" onclick="deleteTask('${day}',${i})">✕</button></div>`).join('')}</div><div class="add-task-row"><button class="add-task-btn" onclick="openTaskModal('${day}')">+ Add</button></div>`;
+    grid.appendChild(col);
+  });
+}
+function openTaskModal(day){ document.getElementById('taskDay').value=day; ['taskTime','taskSubject','taskDur'].forEach(id=>document.getElementById(id).value=''); document.getElementById('taskModal').classList.add('open'); }
+function closeTaskModal(){ document.getElementById('taskModal').classList.remove('open'); }
+function saveTask(){
+  const day=document.getElementById('taskDay').value;
+  const r=ld('routine',{}); if(!r[day]) r[day]=[];
+  r[day].push({time:document.getElementById('taskTime').value,subject:document.getElementById('taskSubject').value,dur:document.getElementById('taskDur').value,color:document.getElementById('taskColor').value});
+  sv('routine',r); closeTaskModal(); renderRoutine();
+}
+function deleteTask(day,idx){ const r=ld('routine',{}); r[day].splice(idx,1); sv('routine',r); renderRoutine(); }
+function addRoutineBlock(){
+  const day=document.getElementById('rtDay').value, r=ld('routine',{});
+  if(!r[day]) r[day]=[];
+  r[day].push({time:document.getElementById('rtTime').value,subject:document.getElementById('rtSubject').value,dur:document.getElementById('rtDur').value,color:document.getElementById('rtColor').value});
+  sv('routine',r); renderRoutine();
+  ['rtSubject','rtTime','rtDur'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ── PAST PAPERS LOG ───────────────────────────────────────────────
+function sBand(s){ s=parseFloat(s); if(s>=80) return 'a'; if(s>=70) return 'b'; if(s>=60) return 'c'; return 'd'; }
+function sLabel(s){ s=parseFloat(s); if(s>=80) return 'A*'; if(s>=70) return 'A'; if(s>=60) return 'B'; return 'C'; }
+
+function addPP(){
+  const paper=document.getElementById('ppPaper').value.trim(), score=document.getElementById('ppScore').value.trim();
+  if(!paper||!score){ alert('Fill in paper and score!'); return; }
+  const pps=ld('pastpapers',[]);
+  const entry = {
+    id:Date.now(),
+    subject:document.getElementById('ppSubject').value,
+    paper,
+    score,
+    date:document.getElementById('ppDate').value,
+    notes:document.getElementById('ppNotes').value.trim(),
+    file: pendingFile ? { name: pendingFile.name, dataUrl: pendingFile.dataUrl, type: pendingFile.type, size: pendingFile.size } : null
+  };
+  pps.unshift(entry);
+  try {
+    sv('pastpapers',pps);
+  } catch(e) {
+    // If storage quota exceeded (large file), store without file data
+    entry.file = entry.file ? { name: entry.file.name, type: entry.file.type, size: entry.file.size, dataUrl: null, storageError: true } : null;
+    pps[0] = entry;
+    sv('pastpapers', pps);
+    alert('Note: The file was too large to save in browser storage. The log entry was saved without the file attachment.');
+  }
+  ['ppPaper','ppScore','ppNotes'].forEach(id=>document.getElementById(id).value='');
+  clearPendingFile();
+  renderPP();
+}
+
+function deletePP(id){ sv('pastpapers',ld('pastpapers',[]).filter(p=>p.id!==id)); renderPP(); }
+
+function renderPP(){
+  const pps=ld('pastpapers',[]);
+  const body=document.getElementById('ppBody'); body.innerHTML='';
+  document.getElementById('ppEmpty').style.display=pps.length?'none':'block';
+  pps.forEach(p=>{
+    const tr=document.createElement('tr');
+    let fileCell = '—';
+    if (p.file) {
+      if (p.file.storageError) {
+        fileCell = `<span style="color:var(--urgent);font-size:0.65rem;font-family:'DM Mono',monospace;">⚠ Too large</span>`;
+      } else if (p.file.dataUrl) {
+        fileCell = `<button class="file-view-btn" onclick="viewAttachedFile(${p.id})">📎 ${p.file.name.length > 18 ? p.file.name.slice(0,15)+'…' : p.file.name}</button>`;
+      } else {
+        fileCell = `<span style="color:var(--muted);font-size:0.65rem;font-family:'DM Mono',monospace;">📎 ${p.file.name.length > 18 ? p.file.name.slice(0,15)+'…' : p.file.name}</span>`;
+      }
+    }
+    tr.innerHTML=`
+      <td style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">${p.date}</td>
+      <td>${p.subject}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.73rem;">${p.paper}</td>
+      <td><span class="score-pill score-${sBand(p.score)}">${p.score}% · ${sLabel(p.score)}</span></td>
+      <td>${fileCell}</td>
+      <td style="color:var(--muted);font-size:0.73rem;max-width:180px;">${p.notes||'—'}</td>
+      <td><button class="btn btn-danger" style="font-size:0.62rem;padding:0.18rem 0.45rem;" onclick="deletePP(${p.id})">✕</button></td>`;
+    body.appendChild(tr);
+  });
+  const stats=document.getElementById('ppStats');
+  const avg=pps.length?Math.round(pps.reduce((s,p)=>s+parseFloat(p.score||0),0)/pps.length):0;
+  const best=pps.length?Math.max(...pps.map(p=>parseFloat(p.score||0))):0;
+  const bySubj={}; pps.forEach(p=>{ if(!bySubj[p.subject]) bySubj[p.subject]=0; bySubj[p.subject]++; });
+  const top=Object.entries(bySubj).sort((a,b)=>b[1]-a[1])[0];
+  stats.innerHTML=`<div class="pp-stat"><div class="pp-stat-num">${pps.length}</div><div class="pp-stat-label">Papers Done</div></div><div class="pp-stat"><div class="pp-stat-num" style="color:${avg>=70?'var(--fine)':avg>=50?'var(--soon)':'var(--urgent)'}">${pps.length?avg+'%':'—'}</div><div class="pp-stat-label">Avg Score</div></div><div class="pp-stat"><div class="pp-stat-num" style="color:var(--fine)">${pps.length?best+'%':'—'}</div><div class="pp-stat-label">Best Score</div></div><div class="pp-stat"><div class="pp-stat-num" style="font-size:0.9rem;line-height:1.4;">${top?top[0].split(' ').slice(-1)[0]:'—'}</div><div class="pp-stat-label">Most Practised</div></div>`;
+}
+
+// ── FLASHCARDS ────────────────────────────────────────────────────
+let fcCards=[], fcIdx=0;
+function renderFC(){ fcCards=ld('flashcards',[]); fcIdx=Math.min(fcIdx,Math.max(0,fcCards.length-1)); updateFCDisplay(); renderFCList(); }
+function updateFCDisplay(){
+  document.getElementById('fcCard').classList.remove('flipped');
+  if(!fcCards.length){ document.getElementById('fcFront').textContent='No cards yet!'; document.getElementById('fcBack').textContent=''; document.getElementById('fcCounter').textContent='0 / 0'; return; }
+  const c=fcCards[fcIdx];
+  document.getElementById('fcFront').innerHTML=`<div style="font-size:0.6rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.4rem;">${c.subject}</div>${c.q}`;
+  document.getElementById('fcBack').textContent=c.a;
+  document.getElementById('fcCounter').textContent=`${fcIdx+1} / ${fcCards.length}`;
+}
+function flipCard(){ document.getElementById('fcCard').classList.toggle('flipped'); }
+function prevCard(){ if(fcCards.length){ fcIdx=(fcIdx-1+fcCards.length)%fcCards.length; updateFCDisplay(); } }
+function nextCard(){ if(fcCards.length){ fcIdx=(fcIdx+1)%fcCards.length; updateFCDisplay(); } }
+function shuffleCards(){ fcCards.sort(()=>Math.random()-0.5); fcIdx=0; updateFCDisplay(); }
+function markKnown(){ if(fcCards.length){ fcCards[fcIdx].known=true; sv('flashcards',fcCards); nextCard(); } }
+function markUnknown(){ if(fcCards.length){ fcCards[fcIdx].known=false; sv('flashcards',fcCards); nextCard(); } }
+function addCard(){
+  const q=document.getElementById('fcQ').value.trim(), a=document.getElementById('fcA').value.trim();
+  if(!q||!a){ alert('Fill in question and answer!'); return; }
+  fcCards=ld('flashcards',[]); fcCards.push({id:Date.now(),subject:document.getElementById('fcSubject').value,q,a,known:null});
+  sv('flashcards',fcCards); document.getElementById('fcQ').value=''; document.getElementById('fcA').value='';
+  fcIdx=fcCards.length-1; updateFCDisplay(); renderFCList();
+}
+function deleteCard(id){ fcCards=ld('flashcards',[]).filter(c=>c.id!==id); sv('flashcards',fcCards); fcIdx=Math.max(0,Math.min(fcIdx,fcCards.length-1)); updateFCDisplay(); renderFCList(); }
+function renderFCList(){
+  const list=document.getElementById('fcList');
+  list.innerHTML=fcCards.length?fcCards.map(c=>`<div class="fc-list-item"><span style="flex:1">${c.q.slice(0,55)}${c.q.length>55?'…':''}</span><span style="font-family:'DM Mono',monospace;font-size:0.58rem;color:${c.known===true?'var(--fine)':c.known===false?'var(--urgent)':'var(--muted)'};">${c.known===true?'✓':c.known===false?'✗':'—'}</span><button class="btn btn-danger" style="font-size:0.58rem;padding:0.15rem 0.4rem;" onclick="deleteCard(${c.id})">✕</button></div>`).join('')
+    :'<div style="color:var(--muted);font-size:0.74rem;font-family:\'DM Mono\',monospace;text-align:center;padding:1rem;">No cards yet.</div>';
+}
+
+// ── NOTES ─────────────────────────────────────────────────────────
+let currentNoteId=null;
+function renderNotes(){
+  const notes=ld('notes',[]);
+  const sidebar=document.getElementById('notesSidebar'); sidebar.innerHTML='';
+  notes.forEach(n=>{ const t=document.createElement('div'); t.className='note-tab'+(n.id===currentNoteId?' active':''); t.innerHTML=`<span class="nt-name">${n.title||'Untitled'}</span><button class="nt-del" onclick="deleteNote(${n.id},event)">✕</button>`; t.onclick=()=>openNote(n.id); sidebar.appendChild(t); });
+  if(!notes.length) sidebar.innerHTML='<div style="color:var(--muted);font-size:0.72rem;font-family:\'DM Mono\',monospace;padding:0.5rem;">No notes yet.</div>';
+  if(currentNoteId){ const n=notes.find(x=>x.id===currentNoteId); if(n){ document.getElementById('noteTitleInput').value=n.title||''; document.getElementById('noteBodyInput').value=n.body||''; } }
+  else { document.getElementById('noteTitleInput').value=''; document.getElementById('noteBodyInput').value=''; }
+}
+function addNote(){ const notes=ld('notes',[]); const nn={id:Date.now(),title:'New Note',body:''}; notes.unshift(nn); sv('notes',notes); currentNoteId=nn.id; renderNotes(); }
+function openNote(id){ currentNoteId=id; renderNotes(); }
+function deleteNote(id,e){ e.stopPropagation(); const notes=ld('notes',[]).filter(n=>n.id!==id); sv('notes',notes); if(currentNoteId===id) currentNoteId=notes[0]?.id||null; renderNotes(); }
+function saveCurrentNote(){
+  if(!currentNoteId) return;
+  const notes=ld('notes',[]); const n=notes.find(x=>x.id===currentNoteId); if(!n) return;
+  n.title=document.getElementById('noteTitleInput').value; n.body=document.getElementById('noteBodyInput').value;
+  sv('notes',notes); document.getElementById('notesSaved').textContent='✓ saved '+new Date().toLocaleTimeString('en-GB'); renderNotes();
+}
+
+// ── POMODORO ──────────────────────────────────────────────────────
+let pomoRunning=false, pomoSecs=25*60, pomoInterval=null, pomoMode='work', pomoSession=1;
+const CIRC=326.7;
+function updatePomoRing(){
+  const total=(pomoMode==='work'?parseInt(document.getElementById('pomoWorkMin').value||25):pomoMode==='break'?parseInt(document.getElementById('pomoBreakMin').value||5):15)*60;
+  document.getElementById('pomoRing').style.strokeDashoffset=CIRC*(1-pomoSecs/total);
+  const m=Math.floor(pomoSecs/60), s=pomoSecs%60;
+  document.getElementById('pomoTime').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('pomoLbl').textContent=pomoMode==='work'?'Focus':pomoMode==='break'?'Break':'Long Break';
+  document.getElementById('pomoSessions').textContent=`Session ${pomoSession} of 4`;
+}
+function setPomoMode(mode){ clearInterval(pomoInterval); pomoRunning=false; document.getElementById('pomoBtn').textContent='▶ Start'; pomoMode=mode; pomoSecs=(mode==='work'?parseInt(document.getElementById('pomoWorkMin').value||25):mode==='break'?parseInt(document.getElementById('pomoBreakMin').value||5):15)*60; updatePomoRing(); }
+function togglePomo(){
+  if(pomoRunning){ clearInterval(pomoInterval); pomoRunning=false; document.getElementById('pomoBtn').textContent='▶ Resume'; }
+  else { pomoRunning=true; document.getElementById('pomoBtn').textContent='⏸ Pause'; pomoInterval=setInterval(()=>{ if(pomoSecs<=0){ clearInterval(pomoInterval); pomoRunning=false; document.getElementById('pomoBtn').textContent='▶ Start'; if(pomoMode==='work'){ pomoSession=pomoSession%4+1; if(pomoSession===1){ setPomoMode('long'); alert('🌙 Long break — you\'ve completed 4 sessions!'); } else { setPomoMode('break'); alert('☕ Break time!'); } } else { setPomoMode('work'); alert('🎯 Back to work!'); } return; } pomoSecs--; updatePomoRing(); },1000); }
+}
+function resetPomo(){ clearInterval(pomoInterval); pomoRunning=false; pomoMode='work'; pomoSession=1; pomoSecs=parseInt(document.getElementById('pomoWorkMin').value||25)*60; document.getElementById('pomoBtn').textContent='▶ Start'; updatePomoRing(); }
+
+// ── CHECKLIST ─────────────────────────────────────────────────────
+function renderChecklist(){
+  const body=document.getElementById('checklistBody'); body.innerHTML=''; let checked=0;
+  checkSubjects.forEach((s,i)=>{ const on=ld('chk_'+i,false); if(on) checked++; const row=document.createElement('div'); row.className='check-item'; row.innerHTML=`<label><input type="checkbox" ${on?'checked':''} onchange="toggleCheck(${i},this)"><div class="cbox">${on?'✓':''}</div><span style="${on?'text-decoration:line-through;color:var(--muted)':''}">${s}</span></label>`; body.appendChild(row); });
+  const pct=Math.round(checked/checkSubjects.length*100);
+  document.getElementById('checkFill').style.width=pct+'%';
+  document.getElementById('checkPct').textContent=`${checked}/${checkSubjects.length} reviewed · ${pct}%`;
+}
+function toggleCheck(i,el){ sv('chk_'+i,el.checked); renderChecklist(); }
+function resetChecks(){ checkSubjects.forEach((_,i)=>sv('chk_'+i,false)); renderChecklist(); }
+
+// ── TIPS ──────────────────────────────────────────────────────────
+const tips=["🔁 <strong>Spaced Repetition</strong>: Review material at increasing intervals — 1 day, 3 days, 1 week, 2 weeks. Dramatically improves retention.","✍️ <strong>Active Recall</strong>: Close your notes and write down everything you remember. Far more effective than re-reading.","🧠 <strong>Feynman Technique</strong>: Explain a concept as if teaching a 10-year-old. If you can't, you don't fully understand it yet.","📅 <strong>Interleaving</strong>: Mix different subjects in one session. It feels harder but leads to better long-term learning.","😴 <strong>Sleep is revision</strong>: Your brain consolidates memory during sleep. 8 hours beats late-night cramming every time.","🎯 <strong>Past Papers</strong>: Timed past papers are the best exam prep. Always review mark schemes after.","📖 <strong>Summarise in your own words</strong>: After reading, close the book and rewrite the key points. Your own language sticks better.","🌿 <strong>Environment matters</strong>: Phone in another room. Consistent, tidy, well-lit space. Your brain links location with focus.","🔢 <strong>Chunk it</strong>: Break big topics into small chunks. Master each before moving on.","💬 <strong>Teach someone</strong>: Explaining a topic to someone else forces you to organise your knowledge — and reveals gaps."];
+let tipIdx=0;
+function showTipAt(i){ const t=tips[i]; ['tipCard','dashTip'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=t; }); }
+function cycleTip(){ tipIdx=(tipIdx+1)%tips.length; showTipAt(tipIdx); }
+function prevTip(){ tipIdx=(tipIdx-1+tips.length)%tips.length; showTipAt(tipIdx); }
+
+// ── GRADE CALC ────────────────────────────────────────────────────
+function calcGrade(){
+  const cur=parseFloat(document.getElementById('gcCurrent').value), tgt=parseInt(document.getElementById('gcTarget').value), res=document.getElementById('gcResult');
+  if(isNaN(cur)){ res.textContent='Enter your score above.'; res.style.color='var(--muted)'; return; }
+  const diff=tgt-cur;
+  if(diff<=0) res.innerHTML=`<span style="color:var(--fine)">✓ You've hit this target! Score: ${cur}%</span>`;
+  else { res.innerHTML=`Need <strong style="color:var(--accent)">${diff.toFixed(1)}%</strong> more to reach this target.`; res.style.color='var(--text)'; }
+}
+
+// ── DAYS UNTIL ────────────────────────────────────────────────────
+function renderDaysUntil(){
+  const el=document.getElementById('daysUntil'); const seen=new Set(); const rows=[];
+  exams.forEach(ex=>{ const s=ex.subject.split('—')[0].split(':')[0].trim(); if(!seen.has(s)){ seen.add(s); rows.push({s,d:daysDiff(ex.date)}); } });
+  el.innerHTML=rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:0.28rem 0;border-bottom:1px solid var(--border);"><span style="font-size:0.76rem;">${r.s}</span><span class="badge ${urgClass(r.d)}">${r.d<0?'Past':r.d===0?'Today!':r.d+'d'}</span></div>`).join('');
+}
+
+// ── RANDOM QUESTIONS ──────────────────────────────────────────────
+const rqs=[
+  {s:'Biology',q:'What is the process by which cells divide to produce identical daughter cells?',a:'Mitosis — the cell duplicates its DNA and divides into two genetically identical daughter cells.'},
+  {s:'Biology',q:'Define osmosis.',a:'The movement of water molecules from a region of high water potential to low water potential through a partially permeable membrane.'},
+  {s:'Biology',q:'What is the role of mitochondria?',a:'The site of aerobic respiration — they produce ATP (energy) for cellular processes.'},
+  {s:'Biology',q:'What is the difference between aerobic and anaerobic respiration?',a:'Aerobic uses oxygen and produces CO₂, water, and lots of ATP. Anaerobic has no oxygen and produces lactic acid (in animals) or ethanol + CO₂ (in plants/yeast), with much less ATP.'},
+  {s:'Chemistry',q:'What is the difference between exothermic and endothermic?',a:'Exothermic releases heat to surroundings (temperature rises). Endothermic absorbs heat from surroundings (temperature falls).'},
+  {s:'Chemistry',q:'State the law of conservation of mass.',a:'Mass cannot be created or destroyed in a chemical reaction. Total mass of reactants = total mass of products.'},
+  {s:'Chemistry',q:'What is an ionic bond?',a:'A strong electrostatic force of attraction between oppositely charged ions, formed by the transfer of electrons from a metal to a non-metal.'},
+  {s:'Physics',q:"State Newton's Second Law.",a:'F = ma. The net force on an object equals its mass multiplied by its acceleration.'},
+  {s:'Physics',q:'What is the difference between speed and velocity?',a:'Speed is scalar (magnitude only). Velocity is vector (magnitude AND direction).'},
+  {s:'Physics',q:"What is Ohm's Law?",a:'V = IR. Voltage equals current multiplied by resistance, provided temperature is constant.'},
+  {s:'Mathematics',q:'State the quadratic formula.',a:'x = (−b ± √(b²−4ac)) / 2a, used for equations of the form ax² + bx + c = 0.'},
+  {s:'Mathematics',q:'What does differentiation find?',a:'The rate of change (gradient) of a function — i.e. the gradient of the tangent to the curve at any point.'},
+  {s:'Mathematics',q:"What is Pythagoras's theorem?",a:'a² + b² = c², where c is the hypotenuse of a right-angled triangle.'},
+  {s:'Business Studies',q:'What is the difference between a sole trader and a limited company?',a:'A sole trader has unlimited liability. A limited company is a separate legal entity — shareholders only lose their investment if it fails.'},
+  {s:'Business Studies',q:'Define cash flow.',a:'The movement of money into and out of a business. Positive cash flow = more money in than out.'},
+  {s:'Business Studies',q:'What is market segmentation?',a:'Dividing a market into distinct groups of consumers with similar needs, so a business can target each group more effectively.'},
+  {s:'Computer Science',q:'What is the difference between RAM and ROM?',a:'RAM is volatile (data lost when power off) and stores currently running programs. ROM is non-volatile (data permanent) and stores boot instructions.'},
+  {s:'Computer Science',q:'What is a binary search?',a:'An efficient search that halves the search space each time. Requires a sorted list — checks midpoint, then searches the correct half.'},
+  {s:'Computer Science',q:'What does an if-else statement do?',a:'It executes one block of code if a condition is true, and a different block if the condition is false. Used for decision making in programs.'},
+  {s:'English',q:'What is a semantic field?',a:'A group of words related in meaning or topic. E.g. battle, conflict, soldier, victory all belong to the semantic field of "war".'},
+  {s:'English',q:'What is the effect of a short, simple sentence?',a:"Creates emphasis, urgency, or impact. Draws the reader's attention. Contrasts with longer sentences to control pace."},
+];
+let cQ=null;
+function newRandomQ(){ cQ=rqs[Math.floor(Math.random()*rqs.length)]; const el=document.getElementById('randomQ'); const a=document.getElementById('randomA'); const rb=document.getElementById('revealBtn'); if(el){ el.innerHTML=`<span style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted);">${cQ.s}</span><br><br>${cQ.q}`; if(a){a.style.display='none';a.textContent='';} if(rb) rb.style.display='inline-flex'; } }
+function revealAnswer(){ if(!cQ) return; const a=document.getElementById('randomA'); a.textContent=cQ.a; a.style.display='block'; document.getElementById('revealBtn').style.display='none'; }
+
+// ── INIT ──────────────────────────────────────────────────────────
+document.getElementById('ppDate') && (document.getElementById('ppDate').value=new Date().toISOString().split('T')[0]);
+updateClock(); setInterval(updateClock,1000); setInterval(updateHero,1000);
+renderExamGrid('examGrid','upcoming');
+refreshDash(); showTipAt(0); updatePomoRing(); newRandomQ();
+</script>
+</body>
+</html>
